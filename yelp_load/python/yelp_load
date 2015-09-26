@@ -41,6 +41,9 @@ def process_data_file(args, client):
         locval = aerospike.Geo(locobj)
         client.put(key, { VALBIN: line, LOCBIN: locval, MAPBIN: entry })
         g_nlines += 1
+        if g_nlines % 1000 == 0:
+            sys.stderr.write('.')
+    sys.stderr.write('\n')
 
 def setup_aerospike(args):
     """Establish connection to server"""
