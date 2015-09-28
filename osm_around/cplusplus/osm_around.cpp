@@ -37,7 +37,7 @@
 
 using namespace std;
 
-#define fatal(fmt, ...)									\
+#define fatal(fmt, ...)                                 \
 	do {                                                \
 		fprintf(stderr, "%s:%d: ", __FILE__, __LINE__); \
 		fprintf(stderr, fmt, ##__VA_ARGS__);            \
