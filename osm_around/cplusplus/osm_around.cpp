@@ -38,37 +38,37 @@
 using namespace std;
 
 #define fatal(fmt, ...)                                 \
-	do {                                                \
-		fprintf(stderr, "%s:%d: ", __FILE__, __LINE__); \
-		fprintf(stderr, fmt, ##__VA_ARGS__);            \
-		fprintf(stderr, "\n");                          \
-		exit(1);                                        \
-	} while(0)
+    do {                                                \
+        fprintf(stderr, "%s:%d: ", __FILE__, __LINE__); \
+        fprintf(stderr, fmt, ##__VA_ARGS__);            \
+        fprintf(stderr, "\n");                          \
+        exit(1);                                        \
+    } while(0)
 
 namespace {
 
 // Some things have defaults
-char const * DEF_HOST		= NULL;		// setup from env variable
-int const	 DEF_PORT		= 3000;
-char const * DEF_NAMESPACE	= "test";
-char const * DEF_SET		= "osm";
-double const DEF_RADIUS		= 2000.0;
+char const * DEF_HOST       = NULL;     // setup from env variable
+int const    DEF_PORT       = 3000;
+char const * DEF_NAMESPACE  = "test";
+char const * DEF_SET        = "osm";
+double const DEF_RADIUS     = 2000.0;
 
-string	g_host;
-int		g_port		= DEF_PORT;
-string	g_user;
-string	g_pass;
-string	g_namespace	= DEF_NAMESPACE;
-string	g_set		= DEF_SET;
-double	g_radius	= -1.0;
-double				g_lat;
-double				g_lng;
-char const *		g_filter_amenity = NULL;
-	
-char const *		g_valbin = "val";
-char const *		g_locbin = "loc";
+string  g_host;
+int     g_port      = DEF_PORT;
+string  g_user;
+string  g_pass;
+string  g_namespace = DEF_NAMESPACE;
+string  g_set       = DEF_SET;
+double  g_radius    = -1.0;
+double              g_lat;
+double              g_lng;
+char const *        g_filter_amenity = NULL;
+    
+char const *        g_valbin = "val";
+char const *        g_locbin = "loc";
 
-uint64_t			g_numrecs = 0;
+uint64_t            g_numrecs = 0;
 
 uint64_t
 now()
