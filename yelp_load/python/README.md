@@ -3,7 +3,7 @@
 
 Get usage help:
 
-    ./yelp_load -u
+    ./yelp_load
 
 Load yelp data into a cluster server:
 
