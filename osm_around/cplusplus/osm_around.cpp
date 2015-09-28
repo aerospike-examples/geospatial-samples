@@ -38,18 +38,18 @@
 using namespace std;
 
 #define fatal(fmt, ...)									\
-	do {												\
+	do {                                                \
 		fprintf(stderr, "%s:%d: ", __FILE__, __LINE__); \
-		fprintf(stderr, fmt, ##__VA_ARGS__);			\
-		fprintf(stderr, "\n");							\
-		exit(1);										\
+		fprintf(stderr, fmt, ##__VA_ARGS__);            \
+		fprintf(stderr, "\n");                          \
+		exit(1);                                        \
 	} while(0)
 
 namespace {
 
 // Some things have defaults
 char const * DEF_HOST		= NULL;		// setup from env variable
-int const    DEF_PORT		= 3000;
+int const	 DEF_PORT		= 3000;
 char const * DEF_NAMESPACE	= "test";
 char const * DEF_SET		= "osm";
 double const DEF_RADIUS		= 2000.0;
@@ -73,9 +73,9 @@ uint64_t			g_numrecs = 0;
 uint64_t
 now()
 {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (tv.tv_sec * (uint64_t) 1000000) + tv.tv_usec;
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return (tv.tv_sec * (uint64_t) 1000000) + tv.tv_usec;
 }
 
 bool
@@ -102,7 +102,7 @@ query_cb(const as_val * valp, void * udata)
 		valstr = as_record_get_str(recp, g_valbin);
 	}
 
-    __sync_fetch_and_add(&g_numrecs, 1);
+	__sync_fetch_and_add(&g_numrecs, 1);
 	
 	cout << valstr << endl;
 
@@ -152,7 +152,7 @@ register_udf(aerospike * asp)
 					istreambuf_iterator<char>());
 
 	if (contents.empty())
-        throwstream(runtime_error, "trouble opening " << path);
+		throwstream(runtime_error, "trouble opening " << path);
 	
 	as_bytes udf_content;
 	as_bytes_init_wrap(&udf_content,
@@ -191,8 +191,8 @@ setup_aerospike(aerospike * asp)
 	as_config cfg;
 	as_config_init(&cfg);
 	as_config_add_host(&cfg, host, 3000);
-    if (! g_user.empty())
-        as_config_set_user(&cfg, g_user.c_str(), g_pass.c_str());
+	if (! g_user.empty())
+		as_config_set_user(&cfg, g_user.c_str(), g_pass.c_str());
 	aerospike_init(asp, &cfg);
 
 	as_error err;
@@ -215,41 +215,41 @@ cleanup_aerospike(aerospike * asp)
 void
 usage(int & argc, char ** & argv)
 {
-    cerr << "usage: " << argv[0] << " [options] -l <latitude> <longitude>" << endl
-         << "  options:" << endl
-         << "    -u, --usage                            display usage" << endl
-         << "    -h, --host=HOST                        database host           [" << DEF_HOST << "]" << endl
-         << "    -p, --port=PORT                        database port           [" << DEF_PORT << "]" << endl
-         << "    -U, --user=USER                        username                [<none>]" << endl
-         << "    -P, --password=PASSWORD                password                [<none>]" << endl
-         << "    -n, --namespace=NAMESPACE              query namespace         [" << DEF_NAMESPACE << "]" << endl
-         << "    -s, --set=SET                          query set               [" << DEF_SET << "]" << endl
-         << "    -r, --radius-meters=METERS             radius in meters        [" << DEF_RADIUS << "]"  << endl
-		 << "    -a, --amenity=AMENITY                  filter with amenity" << endl
-        ;
+	cerr << "usage: " << argv[0] << " [options] -l <latitude> <longitude>" << endl
+		 << "  options:" << endl
+		 << "    -u, --usage                 display usage" << endl
+		 << "    -h, --host=HOST             database host           [" << DEF_HOST << "]" << endl
+		 << "    -p, --port=PORT             database port           [" << DEF_PORT << "]" << endl
+		 << "    -U, --user=USER             username                [<none>]" << endl
+		 << "    -P, --password=PASSWORD     password                [<none>]" << endl
+		 << "    -n, --namespace=NAMESPACE   query namespace         [" << DEF_NAMESPACE << "]" << endl
+		 << "    -s, --set=SET               query set               [" << DEF_SET << "]" << endl
+		 << "    -r, --radius-meters=METERS  radius in meters        [" << DEF_RADIUS << "]"  << endl
+		 << "    -a, --amenity=AMENITY       filter with amenity" << endl
+		;
 }
 
 void
 parse_arguments(int & argc, char ** & argv)
 {
-    char * endp;
+	char * endp;
 
 	g_host = DEF_HOST;
 
-    bool saw_loc = false;
+	bool saw_loc = false;
 
 	static struct option long_options[] =
 		{
-			{"usage",					no_argument,		0, 'u'},
-			{"host",					required_argument,	0, 'h'},
-            {"port",					required_argument,	0, 'p'},
-            {"user",					required_argument,	0, 'U'},
-            {"password",				required_argument,	0, 'P'},
-			{"namespace",				required_argument,	0, 'n'},
-            {"set",						required_argument,	0, 's'},
-			{"location",				required_argument,	0, 'l'},
-			{"radius-meters",			required_argument,	0, 'r'},
-			{"amenity",					required_argument,	0, 'a'},
+			{"usage",                   no_argument,        0, 'u'},
+			{"host",                    required_argument,  0, 'h'},
+			{"port",                    required_argument,  0, 'p'},
+			{"user",                    required_argument,  0, 'U'},
+			{"password",                required_argument,  0, 'P'},
+			{"namespace",               required_argument,  0, 'n'},
+			{"set",                     required_argument,  0, 's'},
+			{"location",                required_argument,  0, 'l'},
+			{"radius-meters",           required_argument,  0, 'r'},
+			{"amenity",                 required_argument,  0, 'a'},
 			{0, 0, 0, 0}
 		};
 
@@ -262,7 +262,7 @@ parse_arguments(int & argc, char ** & argv)
 		if (opt == -1)
 			break;
 
-        char const * argp = NULL;
+		char const * argp = NULL;
 
 		switch (opt) {
 
@@ -340,8 +340,8 @@ parse_arguments(int & argc, char ** & argv)
 	if (g_radius < 0.0)
 		g_radius = DEF_RADIUS;
 
-    if (!saw_loc)
-        throwstream(runtime_error, "missing location (lat/lng) argument");
+	if (!saw_loc)
+		throwstream(runtime_error, "missing location (lat/lng) argument");
 }
 
 int
