@@ -8,4 +8,4 @@ This directory contains sample Aerospike query programs for
 Sample Query Programs
 ----------------------------------------------------------------
 
-#### [C++ Sample](cplusplus/README.md)
+#### [C++ Sample](cplusplus)

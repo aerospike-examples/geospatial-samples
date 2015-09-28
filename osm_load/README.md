@@ -14,4 +14,4 @@ is available for download at [Plant OSM](http://planet.osm.org/).
 Aerospike Loaders
 ----------------------------------------------------------------
 
-#### [Python Loader](python/README.md)
+#### [Python Loader](python)
