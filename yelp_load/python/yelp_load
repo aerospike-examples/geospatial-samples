@@ -60,10 +60,17 @@ def create_index(args, client):
 def cleanup_aerospike(args, client):
     """Gracefully shutdown the connection to the server"""
     client.close()
+
+class HelpfulParser(argparse.ArgumentParser):
+    """Prints usage when an error is encountered"""
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % (message,))
+        self.print_help()
+        sys.exit(2)
     
 def setup_parser():
     """Parse command line options"""
-    parser = argparse.ArgumentParser(
+    parser = HelpfulParser(
         add_help=False,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
