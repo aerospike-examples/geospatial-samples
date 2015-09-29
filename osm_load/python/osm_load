@@ -61,7 +61,8 @@ class NodeLoader(object):
                 self.client.put(key, { VALBIN: valstr,
                                        LOCBIN: locgeo,
                                        MAPBIN: valobj },
-                                policy={'timeout': 10000})
+                                policy={ 'timeout': 10000,
+                                         'retry': 10 })
 
                 self.npoints += 1
                 if self.npoints % 1000 == 0:
