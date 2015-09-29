@@ -4,5 +4,7 @@
 
     npm install .
 
-    node .
+    node . --help
+    
+    node . -l '40.4484,-80.0024'
     

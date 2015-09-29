@@ -63,6 +63,8 @@ class NodeLoader(object):
                                        MAPBIN: valobj })
 
                 self.npoints += 1
+                if self.npoints % 1000 == 0:
+                    sys.stderr.write('.')
 
 def setup_aerospike(args):
     """Establish connection to server"""
@@ -123,6 +125,7 @@ if __name__ == '__main__':
     loader = NodeLoader(args, client)
     osmp = OSMParser(nodes_callback=loader.nodes)
     osmp.parse(args.infile)
+    sys.stderr.write('\n')
     t1 = time.time()
 
     cleanup_aerospike(args, client)
