@@ -1,5 +1,7 @@
 
-    export PYTHONPATH=/home/ksedgwic/aerospike/geospatial/aerospike-client-python/build/lib.linux-x86_64-2.7
+    export PYTHONPATH=${HOME}/aerospike/aerospike-client-python/build/lib.linux-x86_64-2.7
+
+    export PYTHONPATH=${HOME}/aerospike/aerospike-client-python/build/lib.linux-x86_64-2.6
 
 Get usage help:
 
