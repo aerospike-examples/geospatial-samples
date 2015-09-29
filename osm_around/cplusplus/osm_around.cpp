@@ -136,8 +136,8 @@ query_circle(aerospike * asp, double lat, double lng, double radius)
 	as_error err;
 	if (aerospike_query_foreach(asp, &err, NULL,
 								&query, query_cb, NULL) != AEROSPIKE_OK)
-		fatal("aerospike_query_foreach() returned %d - %s",
-			  err.code, err.message);
+		throwstream(runtime_error, "aerospike_query_foreach() returned %d - %s",
+					err.code, err.message);
 
 	as_query_destroy(&query);
 }
@@ -217,15 +217,15 @@ usage(int & argc, char ** & argv)
 {
 	cerr << "usage: " << argv[0] << " [options] -l <latitude> <longitude>" << endl
 		 << "  options:" << endl
-		 << "    -u, --usage                 display usage" << endl
-		 << "    -h, --host=HOST             database host           [" << DEF_HOST << "]" << endl
-		 << "    -p, --port=PORT             database port           [" << DEF_PORT << "]" << endl
-		 << "    -U, --user=USER             username                [<none>]" << endl
-		 << "    -P, --password=PASSWORD     password                [<none>]" << endl
-		 << "    -n, --namespace=NAMESPACE   query namespace         [" << DEF_NAMESPACE << "]" << endl
-		 << "    -s, --set=SET               query set               [" << DEF_SET << "]" << endl
-		 << "    -r, --radius-meters=METERS  radius in meters        [" << DEF_RADIUS << "]"  << endl
-		 << "    -a, --amenity=AMENITY       filter with amenity" << endl
+		 << "    -u, --usage                 	display usage" << endl
+		 << "    -h, --host=HOST             	database host           [" << DEF_HOST << "]" << endl
+		 << "    -p, --port=PORT             	database port           [" << DEF_PORT << "]" << endl
+		 << "    -U, --user=USER             	username                [<none>]" << endl
+		 << "    -P, --password=PASSWORD     	password                [<none>]" << endl
+		 << "    -n, --namespace=NAMESPACE   	query namespace         [" << DEF_NAMESPACE << "]" << endl
+		 << "    -s, --set=SET               	query set               [" << DEF_SET << "]" << endl
+		 << "    -r, --radius-meters=METERS  	radius in meters        [" << DEF_RADIUS << "]"  << endl
+		 << "    -a, --amenity=AMENITY       	filter with amenity" << endl
 		;
 }
 
@@ -256,7 +256,8 @@ parse_arguments(int & argc, char ** & argv)
 	while (true)
 	{
 		int optndx = 0;
-		int opt = getopt_long(argc, argv, "uh:p:U:P:n:s:l:r:a:", long_options, &optndx);
+		int opt = getopt_long(argc, argv, "uh:p:U:P:n:s:l:r:a:",
+							  long_options, &optndx);
 
 		// Are we done processing arguments?
 		if (opt == -1)
@@ -278,8 +279,7 @@ parse_arguments(int & argc, char ** & argv)
 		case 'p':
 			g_port = strtol(optarg, &endp, 0);
 			if (*endp != '\0')
-				throwstream(runtime_error,
-							"invalid port value: " << optarg);
+				throwstream(runtime_error, "invalid port value: " << optarg);
 			break;
 
 		case 'U':
@@ -303,15 +303,13 @@ parse_arguments(int & argc, char ** & argv)
 			argp = argv[optind-1];
 			g_lat = strtod(argp, &endp);
 			if (endp == argp)
-				throwstream(runtime_error,
-							"invalid latitude value: " << argp);
+				throwstream(runtime_error, "invalid latitude value: " << argp);
 			if (++optind > argc)
 				throwstream(runtime_error, "missing longitude value");
 			argp = argv[optind-1];
 			g_lng = strtod(argp, &endp);
 			if (endp == argp)
-				throwstream(runtime_error,
-							"invalid longitude value: " << argp);
+				throwstream(runtime_error, "invalid longitude value: " << argp);
 			break;
 
 		case 'r':
