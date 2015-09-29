@@ -48,13 +48,13 @@ using namespace std;
 namespace {
 
 // Some things have defaults
-char const * DEF_HOST       = NULL;     // setup from env variable
+char const * DEF_HOST       = "localhost";
 int const    DEF_PORT       = 3000;
 char const * DEF_NAMESPACE  = "test";
 char const * DEF_SET        = "osm";
 double const DEF_RADIUS     = 2000.0;
 
-string  g_host;
+string  g_host		= DEF_HOST;
 int     g_port      = DEF_PORT;
 string  g_user;
 string  g_pass;
@@ -136,8 +136,9 @@ query_circle(aerospike * asp, double lat, double lng, double radius)
 	as_error err;
 	if (aerospike_query_foreach(asp, &err, NULL,
 								&query, query_cb, NULL) != AEROSPIKE_OK)
-		throwstream(runtime_error, "aerospike_query_foreach() returned %d - %s",
-					err.code, err.message);
+		throwstream(runtime_error,
+					"aerospike_query_foreach() returned "
+					<< err.code << '-' << err.message);
 
 	as_query_destroy(&query);
 }
@@ -184,13 +185,9 @@ register_udf(aerospike * asp)
 void
 setup_aerospike(aerospike * asp)
 {
-	char const * host = getenv("ASHOST");
-	if (!host)
-		host = "localhost";
-	
 	as_config cfg;
 	as_config_init(&cfg);
-	as_config_add_host(&cfg, host, 3000);
+	as_config_add_host(&cfg, g_host.c_str(), g_port);
 	if (! g_user.empty())
 		as_config_set_user(&cfg, g_user.c_str(), g_pass.c_str());
 	aerospike_init(asp, &cfg);
@@ -273,7 +270,7 @@ parse_arguments(int & argc, char ** & argv)
 			break;
 
 		case 'h':
-			g_host = strdup(optarg);
+			g_host = optarg;
 			break;
 
 		case 'p':
