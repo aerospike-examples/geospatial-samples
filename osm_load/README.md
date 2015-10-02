@@ -15,3 +15,5 @@ Aerospike Loaders
 ----------------------------------------------------------------
 
 #### [Python Loader](python)
+
+#### [C++ Loader](cplusplus)
