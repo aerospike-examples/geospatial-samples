@@ -167,6 +167,9 @@ handle_node(void const * user_data, readosm_node const * node)
 
     ++g_npoints;
 
+	if (g_npoints % 1000 == 0)
+		cerr << '.';
+	
     // cout << json_dumps(rootobj, JSON_COMPACT) << endl;
 
     return READOSM_OK;
@@ -347,7 +350,9 @@ run(int & argc, char ** & argv)
 
     uint64_t t1 = now();
 
-    cerr << "Loaded " << dec << g_npoints << " points"
+	cerr << endl;
+
+	cerr << "Loaded " << dec << g_npoints << " points"
          << " in " << ((t1 - t0) / 1e6) << " seconds" << endl;
 
     return 0;
