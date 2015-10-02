@@ -102,8 +102,8 @@ handle_node(void const * user_data, readosm_node const * node)
 
 	size_t ntags = node->tag_count;
 
-	// We'll insert all the tags + lat and long.
-	as_map * asmap = (as_map *) as_hashmap_new(ntags + 2);
+	// We'll insert all the tags + osmid, lat and long.
+	as_map * asmap = (as_map *) as_hashmap_new(ntags + 3);
     Scoped<json_t *> valobj(json_object(), NULL, json_decref);
     for (int ii = 0; ii < node->tag_count; ++ii) {
 		as_map_set(asmap,
@@ -113,6 +113,13 @@ handle_node(void const * user_data, readosm_node const * node)
 							node->tags[ii].key,
 							json_string(node->tags[ii].value));
     }
+	// Insert osmid
+	as_map_set(asmap,
+			   (as_val *) as_string_new((char *) "osmid", false),
+			   (as_val *) as_integer_new(node->id));
+	json_object_set_new(valobj, "osmid", json_real(node->id));
+
+	// Insert latitude and longitude
 	as_map_set(asmap,
 			   (as_val *) as_string_new((char *) "latitude", false),
 			   (as_val *) as_double_new(node->latitude));
@@ -121,10 +128,11 @@ handle_node(void const * user_data, readosm_node const * node)
 			   (as_val *) as_double_new(node->longitude));
 	json_object_set_new(valobj, "latitude", json_real(node->latitude));
 	json_object_set_new(valobj, "longitude", json_real(node->longitude));
+
     Scoped<char *> valstr(json_dumps(valobj, JSON_COMPACT), NULL,
                           (void (*)(char*)) free);
 
-    cout << valstr << endl;
+    // cout << valstr << endl;
 
 	// Construct the GeoJSON loc bin value.
     Scoped<json_t *> locobj(json_object(), NULL, json_decref);
@@ -220,7 +228,7 @@ cleanup_aerospike(aerospike * asp)
 void
 usage(int & argc, char ** & argv)
 {
-	cerr << "usage: " << argv[0] << " [options] -l <latitude> <longitude>" << endl
+	cerr << "usage: " << argv[0] << " [options] <infile>" << endl
 		 << "  options:" << endl
 		 << "    -u, --usage                 	display usage" << endl
 		 << "    -h, --host=HOST             	database host           [" << DEF_HOST << "]" << endl
