@@ -34,9 +34,7 @@ OBJDIR = OBJS
 
 PROG1 =	osm_around
 
-SRCS1 = 	\
-			osm_around.cpp \
-			$(NULL)
+SRCS1 = osm_around.cpp
 
 OBJS1.c = $(SRCS1:%.c=$(OBJDIR)/%.o)
 OBJS1   = $(OBJS1.c:%.cpp=$(OBJDIR)/%.o)

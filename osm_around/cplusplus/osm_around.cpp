@@ -231,8 +231,6 @@ parse_arguments(int & argc, char ** & argv)
 {
 	char * endp;
 
-	g_host = DEF_HOST;
-
 	bool saw_loc = false;
 
 	static struct option long_options[] =
@@ -342,10 +340,6 @@ parse_arguments(int & argc, char ** & argv)
 int
 run(int & argc, char ** & argv)
 {
-	DEF_HOST = getenv("ASHOST");
-	if (!DEF_HOST)
-		DEF_HOST = "localhost";
-
 	parse_arguments(argc, argv);
 
 	aerospike as;
