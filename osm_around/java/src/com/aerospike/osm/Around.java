@@ -142,6 +142,11 @@ public class Around {
 		return new AerospikeClient(clipolicy, params.host, params.port);
 	}
 
+	private static void cleanupAerospike(Parameters params,
+										 AerospikeClient client) throws Exception {	
+		client.close();
+	}
+
 	private static void usage(Options options) {
 		HelpFormatter formatter = new HelpFormatter();
 		StringWriter sw = new StringWriter();
@@ -202,13 +207,18 @@ public class Around {
 
 		AerospikeClient client = setupAerospike(params);
 
-		if (params.amenity != null) {
-			registerUDF(params, client);
+		try {
+			if (params.amenity != null) {
+				registerUDF(params, client);
+			}
+
+			queryCircle(params, client);
+
+			System.out.printf("found %d records\n", count);
 		}
-
-		queryCircle(params, client);
-
-		System.out.printf("found %d records\n", count);
+		finally {
+			cleanupAerospike(params, client);
+		}
 	}
 	
 	public static void main(String[] args) {
