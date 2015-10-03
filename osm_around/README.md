@@ -9,3 +9,5 @@ Sample Query Programs
 ----------------------------------------------------------------
 
 #### [C++ Sample](cplusplus)
+
+#### [Java Sample](java)
