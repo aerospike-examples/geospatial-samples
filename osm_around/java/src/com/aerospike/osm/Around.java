@@ -29,16 +29,21 @@ import org.apache.commons.cli.PosixParser;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.Key;
+import com.aerospike.client.Language;
 import com.aerospike.client.policy.ClientPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.RecordSet;
+import com.aerospike.client.query.ResultSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.client.Record;
+import com.aerospike.client.task.RegisterTask;
+import com.aerospike.client.Value;
 
 public class Around {
 
+	private static Policy policy;
 	private static int count = 0;
 	
 	static private class Parameters {
@@ -51,6 +56,7 @@ public class Around {
 		double lat;
 		double lng;
 		double radius;
+		String amenity;
 
 		public Parameters() {
 			this.host = "localhost";
@@ -62,6 +68,7 @@ public class Around {
 			this.lat = 0.0;
 			this.lng = 0.0;
 			this.radius = 2000.0;
+			this.amenity = null;
 		}
 	}
 
@@ -79,30 +86,60 @@ public class Around {
 		stmt.setSetName(params.set);
 		stmt.setBinNames(valbin);
 		stmt.setFilters(Filter.geoWithin(locbin, rgnstr));
-		
-		RecordSet rs = client.query(null, stmt);
-		
-		try {
-			while (rs.next()) {
-				Key key = rs.getKey();
-				Record record = rs.getRecord();
-				String result = record.getString(valbin);
-				System.out.println(result);
-				count++;
+
+		if (params.amenity != null) {
+			stmt.setAggregateFunction("filter_by_amenity", "apply_filter",
+									  Value.get(params.amenity));
+
+			ResultSet rs = client.queryAggregate(null, stmt);
+
+			try {
+				while (rs.next()) {
+					Object result = rs.getObject();
+					System.out.println(result);
+					count++;
+				}
 			}
+			finally {
+				rs.close();
+			}
+			
 		}
-		finally {
-			rs.close();
+		else {
+			RecordSet rs = client.query(null, stmt);
+		
+			try {
+				while (rs.next()) {
+					Key key = rs.getKey();
+					Record record = rs.getRecord();
+					String result = record.getString(valbin);
+					System.out.println(result);
+					count++;
+				}
+			}
+			finally {
+				rs.close();
+			}
 		}
 	}
 	
+	private static void registerUDF(Parameters params,
+									AerospikeClient client) throws Exception {
+		RegisterTask task =
+			client.register(policy, "udf/filter_by_amenity.lua",
+							"filter_by_amenity.lua", Language.LUA);
+		task.waitTillComplete();
+	}
+
 	private static AerospikeClient setupAerospike(Parameters params) throws Exception {	
-		ClientPolicy policy = new ClientPolicy();
-		policy.user = params.user;
-		policy.password = params.password;
-		policy.failIfNotConnected = true;
+		ClientPolicy clipolicy = new ClientPolicy();
+		clipolicy.user = params.user;
+		clipolicy.password = params.password;
+		clipolicy.failIfNotConnected = true;
+
+		policy = clipolicy.readPolicyDefault;
 		
-		return new AerospikeClient(policy, params.host, params.port);
+		return new AerospikeClient(clipolicy, params.host, params.port);
 	}
 
 	private static void usage(Options options) {
@@ -126,6 +163,7 @@ public class Around {
 		options.addOption("n", "namespace", true, "Namespace (default: test)");
 		options.addOption("s", "set", true, "Set name (default: osm)");
 		options.addOption("r", "radius", true, "Radius in meters (default: 2000.0)");
+		options.addOption("a", "amenity", true, "Filter by amenity");
 		options.addOption("u", "usage", false, "Print usage");
 
 		CommandLineParser parser = new PosixParser();
@@ -140,6 +178,7 @@ public class Around {
 		params.set = cl.getOptionValue("s", "osm");
 		String radiusString = cl.getOptionValue("r", "2000");
 		params.radius = Double.parseDouble(radiusString);
+		params.amenity = cl.getOptionValue("a");
 
 		if (cl.hasOption("u")) {
 			usage(options);
@@ -162,6 +201,10 @@ public class Around {
 		Parameters params = parseParameters(args);
 
 		AerospikeClient client = setupAerospike(params);
+
+		if (params.amenity != null) {
+			registerUDF(params, client);
+		}
 
 		queryCircle(params, client);
 
