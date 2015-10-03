@@ -27,6 +27,9 @@ var Policy = aerospike.policy;
 var Status = aerospike.status;
 var filter = aerospike.filter;
 
+var locbin = "loc";
+var valbin = "val";
+
 // Options parsing
 
 var argp = yargs
@@ -70,6 +73,11 @@ var argp = yargs
 			alias: "r",
 			default: 200.0,
 			describe: "Query radius in meters"
+		},
+		amenity: {
+			alias: "a",
+			default: null,
+			describe: "Fiter by amenity"
 		}
 	});
 
@@ -103,14 +111,30 @@ function query_circle(client) {
 		coordinates: [[lng, lat], argv.radius]
 	}
 
-	var options = { filters: [ filter.geoWithin("loc", JSON.stringify(region))] }
+	var options = {
+		filters: [ filter.geoWithin(locbin, JSON.stringify(region))],
+		select: [valbin]
+	}
+
+	if (argv.amenity) {
+		options['aggregationUDF'] = {
+			module: 'filter_by_amenity',
+			funcname: 'apply_filter',
+			args: [argv.amenity]
+		};
+	}
 
 	var qq = client.query(argv.namespace, argv.set, options);
 
 	var stream = qq.execute();
 
 	stream.on('data', function(rec) {
-		console.log(rec.bins.val);
+		if (argv.amenity) {
+			console.log(rec);
+		}
+		else {
+			console.log(rec.bins.val);
+		}
 		count++;
 	});
 
@@ -122,6 +146,17 @@ function query_circle(client) {
 	stream.on('end', function() {
 		console.log(count + " records found");
 		process.exit(0)
+	});
+}
+
+function register_udf(client) {
+	var file = "filter_by_amenity.lua";
+	client.udfRegister(file, function(err) {
+		if (err.code != Status.AEROSPIKE_OK) {
+			console.error("udf registration failed: ", err.message);
+			process.exit(1);
+		}
+		query_circle(client);
 	});
 }
 
@@ -151,12 +186,17 @@ if (argv.password !== null) {
 // Establish a connection to the cluster.
 aerospike.client(config).connect(function (err, client) {
 
-	if ( err.code != Status.AEROSPIKE_OK ) {
+	if (err.code != Status.AEROSPIKE_OK) {
 		console.error("Error: Aerospike server connection error. ", err.message);
 		process.exit(1);
 	}
 
-	query_circle(client);
+	if (argv.amenity) {
+		register_udf(client);
+	}
+	else {
+		query_circle(client);
+	}
 });
 
 // Local Variables:
