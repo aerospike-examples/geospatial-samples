@@ -15,4 +15,3 @@ Running
 
     # Just show cafes
     OBJS/osm_around -l 37.421342 -122.098743 -r 300 -a cafe
-

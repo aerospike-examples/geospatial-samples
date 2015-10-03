@@ -26,9 +26,20 @@ import aerospike
 VALBIN = "val"
 LOCBIN = "loc"
 
-def print_record(key, metadata, record):
+count = 0
+
+def print_record(tup):
     """Prints a record to standard output"""
+    global count
+    (key, metadata, record) = tup
+    print record[VALBIN]
+    count += 1
+    
+def print_value(record):
+    """Prints a record to standard output"""
+    global count
     print record
+    count += 1
     
 def query_circle(args, client):
     """Query for records inside a circle."""
@@ -37,13 +48,27 @@ def query_circle(args, client):
         'coordinates': [[args.longitude, args.latitude], args.radius]
     })
     query = client.query(args.nspace, args.set)
-    query.select(VALBIN)
     query.where(aerospike.predicates.within(LOCBIN, region.dumps()))
-    query.foreach(print_record)
+    if not args.amenity:
+        # Basic search, no amenity filter
+        query.select(VALBIN)
+        query.foreach(print_record)
+    else:
+        # Search with UDF amenity filter
+        query.apply('filter_by_amenity', 'apply_filter', [args.amenity,])
+        query.foreach(print_value)
 
+def register_udf(args, client):
+    """Register the user defined function with the server"""
+    client.udf_put("filter_by_amenity.lua", aerospike.UDF_TYPE_LUA)
+    
 def setup_aerospike(args):
     """Establish connection to server"""
-    config = { 'hosts': [ (args.host, args.port), ] }
+    config = {
+        'hosts': [ (args.host, args.port), ],
+        'lua': { 'user_path': ".",
+                 'system_path': "/opt/aerospike/client/sys/udf/lua" }
+    }
     client = aerospike.client(config)
     client.connect(args.user, args.passwd)
     return client
@@ -81,6 +106,8 @@ def setup_parser():
                         default='osm', help='Set name')
     parser.add_argument('-r', '--radius', metavar='R', type=float,
                         default='2000.0', help='Radius in meters')
+    parser.add_argument('-a', '--amenity', metavar='A', type=str,
+                        default=None, help='Filter with amenity')
 
     parser.add_argument('latitude', type=float, help='Search Latitude')
     parser.add_argument('longitude', type=float, help='Search Longitude')
@@ -94,8 +121,13 @@ if __name__ == '__main__':
 
     client = setup_aerospike(args)
 
+    if args.amenity:
+        register_udf(args, client)
+
     t0 = time.time()
     query_circle(args, client)
     t1 = time.time()
 
     cleanup_aerospike(args, client)
+
+    print "found %d records in %f mSec" % (count, (t1 - t0) * 1000.0)

@@ -103,7 +103,6 @@ public class Around {
 			finally {
 				rs.close();
 			}
-			
 		}
 		else {
 			RecordSet rs = client.query(null, stmt);
