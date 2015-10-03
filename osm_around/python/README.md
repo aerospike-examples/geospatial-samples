@@ -14,4 +14,4 @@ Running
     ./osm_around -r 300 37.421342 -122.098743
 
     # Just show cafes
-    ./osm_around -r300 -a cafe 37.421342 -122.098743
+    ./osm_around -r 300 -a cafe 37.421342 -122.098743
