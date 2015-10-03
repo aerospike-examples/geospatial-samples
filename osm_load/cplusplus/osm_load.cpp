@@ -68,8 +68,9 @@ char const *        g_valbin = "val";
 char const *        g_locbin = "loc";
 char const *        g_mapbin = "map";
 char const *        g_hshbin = "hash";
-char const *		g_locndx = "osm-loc-index";	
-
+string	g_locndx;
+string	g_hshndx;	
+	
 size_t g_npoints = 0;
 
 int64_t id_to_hash(int64_t const & id)
@@ -207,8 +208,22 @@ create_indexes(aerospike * asp)
         as_index_task task;
         if (aerospike_index_create(asp, &err, &task, NULL,
                                    g_namespace.c_str(), g_set.c_str(),
-								   g_locbin, g_locndx,
+								   g_locbin, g_locndx.c_str(),
                                    AS_INDEX_GEO2DSPHERE) != AEROSPIKE_OK)
+            throwstream(runtime_error, "aerospike_index_create() returned "
+                        << err.code << " - " << err.message);
+
+        // Wait for the system metadata to spread to all nodes.
+        aerospike_index_create_wait(&err, &task, 0);
+    }
+
+    {
+        as_error err;
+        as_index_task task;
+        if (aerospike_index_create(asp, &err, &task, NULL,
+                                   g_namespace.c_str(), g_set.c_str(),
+								   g_hshbin, g_hshndx.c_str(),
+                                   AS_INDEX_NUMERIC) != AEROSPIKE_OK)
             throwstream(runtime_error, "aerospike_index_create() returned "
                         << err.code << " - " << err.message);
 
@@ -316,8 +331,11 @@ parse_arguments(int & argc, char ** & argv)
 
     if (optind >= argc)
         throwstream(runtime_error, "missing input-file argument");
-
     g_infile = argv[optind];
+
+	// Make the index names contain the selected set name
+	g_locndx = g_set + "-loc-index";
+	g_hshndx = g_set + "-hsh-index";
 }
 
 int
