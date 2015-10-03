@@ -17,14 +17,30 @@
 
 package com.aerospike.osm;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-	
+
+import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.Key;
+import com.aerospike.client.policy.ClientPolicy;
+import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.query.Filter;
+import com.aerospike.client.query.RecordSet;
+import com.aerospike.client.query.Statement;
+import com.aerospike.client.Record;
+
 public class Around {
+
+	private static int count = 0;
+	
 	static private class Parameters {
 		String host;
 		int port;
@@ -48,6 +64,56 @@ public class Around {
 			this.radius = 2000.0;
 		}
 	}
+
+	private static void queryCircle(Parameters params, AerospikeClient client) {
+		String locbin = "loc";
+		String valbin = "val";
+		
+		String rgnstr =
+			String.format("{ \"type\": \"Circle\", "
+						  + "\"coordinates\": [[%.8f, %.8f], %f] }",
+						  params.lng, params.lat, params.radius);
+
+		Statement stmt = new Statement();
+		stmt.setNamespace(params.namespace);
+		stmt.setSetName(params.set);
+		stmt.setBinNames(valbin);
+		stmt.setFilters(Filter.geoWithin(locbin, rgnstr));
+		
+		RecordSet rs = client.query(null, stmt);
+		
+		try {
+			while (rs.next()) {
+				Key key = rs.getKey();
+				Record record = rs.getRecord();
+				String result = record.getString(valbin);
+				System.out.println(result);
+				count++;
+			}
+		}
+		finally {
+			rs.close();
+		}
+	}
+	
+	private static AerospikeClient setupAerospike(Parameters params) throws Exception {	
+		ClientPolicy policy = new ClientPolicy();
+		policy.user = params.user;
+		policy.password = params.password;
+		policy.failIfNotConnected = true;
+		
+		return new AerospikeClient(policy, params.host, params.port);
+	}
+
+	private static void usage(Options options) {
+		HelpFormatter formatter = new HelpFormatter();
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		String syntax = "usage: " + Around.class.getName()
+			+ " [<options>] -- <latitude> <longitude>";
+		formatter.printHelp(pw, 100, syntax, "options:", options, 0, 2, null);
+		System.out.println(sw.toString());
+	}
 	
 	private static Parameters parseParameters(String[] args) throws ParseException {
 		Parameters params = new Parameters();
@@ -58,9 +124,9 @@ public class Around {
 		options.addOption("U", "user", true, "User name");
 		options.addOption("P", "password", true, "Password");
 		options.addOption("n", "namespace", true, "Namespace (default: test)");
-		options.addOption("s", "set", true, "Set name. Use 'empty' for empty set (default: osm)");
-		options.addOption("r", "radius", true, "radius in meters (default: 2000.0");
-		options.addOption("u", "usage", false, "Print usage.");
+		options.addOption("s", "set", true, "Set name (default: osm)");
+		options.addOption("r", "radius", true, "Radius in meters (default: 2000.0)");
+		options.addOption("u", "usage", false, "Print usage");
 
 		CommandLineParser parser = new PosixParser();
 		CommandLine cl = parser.parse(options, args, false);
@@ -75,9 +141,15 @@ public class Around {
 		String radiusString = cl.getOptionValue("r", "2000");
 		params.radius = Double.parseDouble(radiusString);
 
+		if (cl.hasOption("u")) {
+			usage(options);
+			System.exit(0);
+		}
+		
 		String[] latlng = cl.getArgs();
 		if (latlng.length != 2) {
 			System.out.println("missing latitude and longitude parameters");
+			usage(options);
 			System.exit(1);
 		}
 		params.lat = Double.parseDouble(latlng[0]);
@@ -88,6 +160,12 @@ public class Around {
 
 	private static void run(String[] args) throws Exception {
 		Parameters params = parseParameters(args);
+
+		AerospikeClient client = setupAerospike(params);
+
+		queryCircle(params, client);
+
+		System.out.printf("found %d records\n", count);
 	}
 	
 	public static void main(String[] args) {
