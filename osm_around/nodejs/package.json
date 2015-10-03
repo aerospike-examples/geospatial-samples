@@ -1,0 +1,21 @@
+{
+  "name": "yelp_around",
+  "version": "1.0.0",
+  "description": "Open Street Maps Query Sample",
+  "tags": [
+    "aerospike",
+    "database",
+    "nosql"
+  ],
+  "main": "osm_around",
+  "os": [
+    "linux",
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "dependencies": {
+    "yargs": "3.21.1"
+  }
+}
