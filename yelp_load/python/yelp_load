@@ -26,7 +26,7 @@ import aerospike
 VALBIN = "val"
 LOCBIN = "loc"
 MAPBIN = "map"
-LOCNDX = "yelp-loc-index"
+LOCNDX = None
 
 g_nlines = 0
 
@@ -98,6 +98,8 @@ if __name__ == '__main__':
     parser = setup_parser()
     args = parser.parse_args()
 
+    LOCNDX = args.set + "-loc-index"
+    
     client = setup_aerospike(args)
     create_index(args, client)
 
