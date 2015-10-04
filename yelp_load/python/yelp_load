@@ -34,6 +34,7 @@ def process_data_file(args, client):
     """Read data from input file and insert records"""
     global g_nlines
     for line in args.infile:
+        line = line.rstrip()
         entry = json.loads(line)
         locobj = { 'type': "Point",
                    'coordinates': [ entry['longitude'], entry['latitude'] ] }
