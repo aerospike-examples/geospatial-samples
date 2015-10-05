@@ -27,10 +27,18 @@ var Policy = aerospike.policy;
 var Status = aerospike.status;
 var filter = aerospike.filter;
 
+var locbin = "loc";
+var valbin = "val";
+
+function now() {
+	tt = process.hrtime();
+	return tt[0] + (tt[1] / 1e9);
+}
+
 // Options parsing
 
 var argp = yargs
-	.usage("$0 [options] key")
+	.usage("$0 [options] -- <latitude> <longitude>")
 	.options({
 		help: {
 			boolean: true,
@@ -64,18 +72,17 @@ var argp = yargs
 		set: {
 			alias: "s",
 			default: "yelp",
-			describe: "Set for the keys"
+			describe: "Set for the location data"
 		},
 		radius: {
 			alias: "r",
 			default: 200.0,
 			describe: "Query radius in meters"
 		},
-		location: {
-			string: true,
-			demand: true,
-			alias: "l",
-			describe: "Query latitude, longitude"
+		category: {
+			alias: "c",
+			default: null,
+			describe: "Fiter by category"
 		}
 	});
 
@@ -86,20 +93,80 @@ if (argv.help === true) {
 	return;
 }
 
-// Parse the latitude and longitude
-var locvals;
-if (argv.location.indexOf(',') != -1) {
-	locvals = argv.location.split(',');
-}
-else if (argv.location.indexOf(' ') != -1) {
-	locvals = argv.location.split(' ');
-}
-var lat = parseFloat(locvals[0]);
-var lng = parseFloat(locvals[1]);
-if (isNaN(lat) || isNaN(lng)) {
-	console.error("location must be string containing 'latitude,longitude'");
+if (argv._.length > 2) {
+	console.error("extra positional arguments");
 	argp.showHelp();
 	return;
+}
+
+if (argv._.length < 2) {
+	console.error("missing <latitude> <longitude> pair");
+	argp.showHelp();
+	return;
+}
+
+var lat = parseFloat(argv._[0]);
+var lng = parseFloat(argv._[1]);
+
+function query_circle(client) {
+	var count = 0;
+
+	var t0 = now();
+	
+	var region = {
+		type: "Circle",
+		coordinates: [[lng, lat], argv.radius]
+	}
+
+	var options = {
+		filters: [ filter.geoWithin(locbin, JSON.stringify(region))],
+		select: [valbin]
+	}
+
+	if (argv.category) {
+		options['aggregationUDF'] = {
+			module: 'filter_by_category',
+			funcname: 'apply_filter',
+			args: [argv.category]
+		};
+	}
+
+	var qq = client.query(argv.namespace, argv.set, options);
+
+	var stream = qq.execute();
+
+	stream.on('data', function(rec) {
+		if (argv.category) {
+			console.log(rec);
+		}
+		else {
+			console.log(rec.bins.val);
+		}
+		count++;
+	});
+
+	stream.on('error', function(err){
+		console.log("at error");
+		console.log(err);
+	});
+
+	stream.on('end', function() {
+		var t1 = now();
+		console.log(count + " records found in "
+					+ ((t1 - t0) * 1e3).toFixed(3) + " milliseconds");
+		process.exit(0)
+	});
+}
+
+function register_udf(client) {
+	var file = "filter_by_category.lua";
+	client.udfRegister(file, function(err) {
+		if (err.code != Status.AEROSPIKE_OK) {
+			console.error("udf registration failed: ", err.message);
+			process.exit(1);
+		}
+		query_circle(client);
+	});
 }
 
 // Configure the client.
@@ -121,49 +188,24 @@ if (argv.user !== null) {
 	config.user = argv.user;
 }
 
-if(argv.password !== null) {
+if (argv.password !== null) {
 	config.password = argv.password;
 }
 
 // Establish a connection to the cluster.
-
 aerospike.client(config).connect(function (err, client) {
 
-	if ( err.code != Status.AEROSPIKE_OK ) {
+	if (err.code != Status.AEROSPIKE_OK) {
 		console.error("Error: Aerospike server connection error. ", err.message);
 		process.exit(1);
 	}
 
-	var count = 0;
-
-	var region = {
-		type: "Circle",
-		coordinates: [[lng, lat], argv.radius]
+	if (argv.category) {
+		register_udf(client);
 	}
-
-	console.log(region);
-	
-	var options = { filters: [ filter.geoWithin("loc", JSON.stringify(region))] }
-
-	var qq = client.query(argv.namespace, argv.set, options);
-
-	var stream = qq.execute();
-
-	stream.on('data', function(rec) {
-		console.log(rec.bins.val);
-		count++;
-	});
-
-	stream.on('error', function(err){
-		console.log("at error");
-		console.log(err);
-	});
-
-	stream.on('end', function() {
-		console.log('TOTAL QUERIED:', count++);
-		process.exit(0)
-	});
-
+	else {
+		query_circle(client);
+	}
 });
 
 // Local Variables:
