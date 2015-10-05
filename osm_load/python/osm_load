@@ -17,7 +17,9 @@
 # ----------------------------------------------------------------
 
 import argparse
+import hashlib
 import json
+import struct
 import sys
 import time
 
@@ -28,7 +30,9 @@ import aerospike
 VALBIN = "val"
 LOCBIN = "loc"
 MAPBIN = "map"
-LOCNDX = "osm-loc-index"
+HSHBIN = "hash"
+LOCNDX = None
+HSHNDX = None
 
 class NodeLoader(object):
     """Load named nodes into Aerospike."""
@@ -37,7 +41,13 @@ class NodeLoader(object):
         self.args = args
         self.client = client
         self.npoints = 0
-        
+
+    def id_to_hash(self, id):
+        """Computes a hash of the id"""
+        mm = hashlib.sha256(struct.pack('>q', id))
+        vv = struct.unpack(">q", mm.digest()[0:8])
+        return vv[0] & 0x7fffffffffffffff  # Don't be negative
+
     def nodes(self, nodes):
         """Parser callback, loads nodes with names"""
         global g_npoints
@@ -56,11 +66,15 @@ class NodeLoader(object):
                 locobj = { 'type': "Point", 'coordinates': [ lng, lat ] }
                 locgeo = aerospike.Geo(locobj)
 
+                # Make a hash of the id to use for random selection.
+                hshval = self.id_to_hash(osmid)
+
                 key = (self.args.nspace, self.args.set, osmid)
                 
                 self.client.put(key, { VALBIN: valstr,
                                        LOCBIN: locgeo,
-                                       MAPBIN: valobj },
+                                       MAPBIN: valobj,
+                                       HSHBIN: hshval },
                                 policy={ 'timeout': 10000,
                                          'retry': 10 })
 
@@ -79,6 +93,7 @@ def create_index(args, client):
     """Create the geospatial index on the server"""
     policy = {}
     client.index_2dsphere_create(args.nspace, args.set, LOCBIN, LOCNDX, policy)
+    client.index_integer_create(args.nspace, args.set, HSHBIN, HSHNDX, policy)
     
 def cleanup_aerospike(args, client):
     """Gracefully shutdown the connection to the server"""
@@ -119,6 +134,9 @@ if __name__ == '__main__':
 
     parser = setup_parser()
     args = parser.parse_args()
+
+    LOCNDX = args.set + "-loc-index"
+    HSHNDX = args.set + "-hsh-index"
 
     client = setup_aerospike(args)
     create_index(args, client)
