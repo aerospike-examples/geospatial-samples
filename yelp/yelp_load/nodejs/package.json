@@ -1,0 +1,21 @@
+{
+  "name": "yelp_load",
+  "version": "1.0.0",
+  "description": "Yelp Challenge Business Data Loader",
+  "tags": [
+    "aerospike",
+    "database",
+    "nosql"
+  ],
+  "main": "yelp_load",
+  "os": [
+    "linux",
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "dependencies": {
+    "yargs": "3.21.1"
+  }
+}

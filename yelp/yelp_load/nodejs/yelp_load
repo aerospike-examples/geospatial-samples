@@ -39,9 +39,10 @@ function now() {
 // Options parsing
 
 var argp = yargs
-	.usage("$0 [options] -- <latitude> <longitude>")
+	.usage("$0 [options] <infile>")
 	.options({
-		help: {
+		usage: {
+			alias: "u",
 			boolean: true,
 			describe: "Display this message"
 		},
@@ -72,19 +73,9 @@ var argp = yargs
 		},
 		set: {
 			alias: "s",
-			default: "osm",
+			default: "yelp",
 			describe: "Set for the location data"
 		},
-		radius: {
-			alias: "r",
-			default: 200.0,
-			describe: "Query radius in meters"
-		},
-		amenity: {
-			alias: "a",
-			default: null,
-			describe: "Fiter by amenity"
-		}
 	});
 
 var argv = argp.argv;
@@ -94,21 +85,75 @@ if (argv.help === true) {
 	return;
 }
 
-if (argv._.length > 2) {
+if (argv._.length > 1) {
 	console.error("extra positional arguments");
 	argp.showHelp();
 	return;
 }
 
-if (argv._.length < 2) {
-	console.error("missing <latitude> <longitude> pair");
+if (argv._.length < 1) {
+	console.error("missing infile argument");
 	argp.showHelp();
 	return;
 }
 
-var lat = parseFloat(argv._[0]);
-var lng = parseFloat(argv._[1]);
+var locndx = argv.set + "-loc-index";
 
+// Configure the client.
+config = {
+
+	// the hosts to attempt to connect with.
+	hosts: [
+		{ addr: argv.host, port: argv.port }
+	],
+	
+	//modlua userpath
+	modlua: {
+		userPath: __dirname
+	}
+
+};
+
+if (argv.user !== null) {
+	config.user = argv.user;
+}
+
+if (argv.password !== null) {
+	config.password = argv.password;
+}
+
+function read_infile(client) {
+	HERE HERE HERRE
+}
+
+function create_index(client) {
+    var options = {
+        ns:  argv.namespace,
+        set: argv.set,
+        bin : locbin,
+		index: locndx
+    };
+	client.createGeo2DSphereIndex(options, function(err) {
+		if (err.code == Status.AEROSPIKE_OK) {
+			read_infile(client)
+		}
+		else {
+			console.log("index create failed: ", err);
+			process.exit(1)
+		}
+	});
+}
+
+// Establish a connection to the cluster.
+aerospike.client(config).connect(function (err, client) {
+
+	if (err.code != Status.AEROSPIKE_OK) {
+		console.error("Error: Aerospike server connection error. ", err.message);
+		process.exit(1);
+	}
+
+	create_index(client);
+});
 // Local Variables:
 // mode: javascript
 // End:
