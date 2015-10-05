@@ -11,17 +11,21 @@ Setup
 
     npm install .
 
+
 Running
 ----------------------------------------------------------------
 
 Usage:
 
-    ./osm_around --usage
+    ./yelp_load --usage
 
-Execute the program providing latitude and longitude as arguments:
+Load yelp business data into a local server:
 
-    # What's around the Mountain View office?
-    ./osm_around -r 300 -- 37.421342 -122.098743
+    ./yelp_load yelp_academic_dataset_business.json
 
-    # Just show cafes
-    ./osm_around -r 300 -a cafe -- 37.421342 -122.098743
+Load yelp business data into a cluster server:
+
+    ./yelp_load \
+        -h C-17464dcc0c.aerospike-burro.net -p 3200 \
+        -U dbadmin123 -P dbadmin123  -n ns1 \
+        yelp_academic_dataset_business.json
