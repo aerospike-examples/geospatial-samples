@@ -15,9 +15,9 @@ Instructions for acquiring the yelp data here.
 
 #### Sample Loader Programs
 
-* [Python Loader](yelp_load/python)
+* [Python Loader](load/python)
 
-* [Node.js Loader](yelp_load/nodejs)
+* [Node.js Loader](load/nodejs)
 
 
 Querying Yelp Data
@@ -27,10 +27,10 @@ Sample data record here?
 
 #### Sample Query Programs
 
-* [Python](yelp_around/python)
+* [Python](around/python)
 
-* [Java](yelp_around/java)
+* [Java](around/java)
 
-* [Node.js](yelp_around/nodejs)
+* [Node.js](around/nodejs)
 
-* [C++](yelp_around/cplusplus)
+* [C++](around/cplusplus)

@@ -27,9 +27,9 @@ Information about how to do that here ...
 
 #### Sample Loader Programs
 
-* [C++ Loader](osm_load/cplusplus)
+* [C++ Loader](load/cplusplus)
 
-* [Python Loader](osm_load/python)
+* [Python Loader](load/python)
 
 
 Querying OpenStreetMap Data
@@ -39,10 +39,10 @@ Sample data record here?
 
 #### Sample Query Programs
 
-* [Python](osm_around/python)
+* [Python](around/python)
 
-* [Java](osm_around/java)
+* [Java](around/java)
 
-* [Node.js](osm_around/nodejs)
+* [Node.js](around/nodejs)
 
-* [C++](osm_around/cplusplus)
+* [C++](around/cplusplus)
