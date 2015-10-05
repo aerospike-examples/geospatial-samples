@@ -211,9 +211,12 @@ public class Around {
 				registerUDF(params, client);
 			}
 
+			long t0 = System.nanoTime();
 			queryCircle(params, client);
+			long t1 = System.nanoTime();
 
-			System.out.printf("found %d records\n", count);
+			System.out.printf("found %d records in %.3f milliseconds\n",
+							  count, (t1 - t0) / 1e6);
 		}
 		finally {
 			cleanupAerospike(params, client);
