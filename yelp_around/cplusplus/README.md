@@ -12,12 +12,12 @@ Running
 
 Usage:
 
-    OBJS/osm_around --usage
+    OBJS/yelp_around --usage
 
 Execute the program providing latitude and longitude as arguments:
 
-    # What's around the Mountain View office?
-    OBJS/osm_around -r 300 -- 37.421342 -122.098743
+    # What's around the Andy Warhol Museum?
+    OBJS/yelp_around -r 300 -- 40.4484 -80.0024
 
-    # Just show cafes
-    OBJS/osm_around -r 300 -a cafe -- 37.421342 -122.098743
+    # Just show bars
+    OBJS/yelp_around -r 300 -c Bars -- 40.4484 -80.0024
