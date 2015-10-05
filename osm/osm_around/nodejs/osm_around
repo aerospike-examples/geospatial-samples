@@ -40,7 +40,8 @@ function now() {
 var argp = yargs
 	.usage("$0 [options] -- <latitude> <longitude>")
 	.options({
-		help: {
+		usage: {
+			alias: "u",
 			boolean: true,
 			describe: "Display this message"
 		},
