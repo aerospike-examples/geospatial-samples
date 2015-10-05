@@ -13,7 +13,7 @@ You need one of these or similar:
 
 Usage:
 
-    ./osm_load --usage
+    ./osm_around --usage
 
 Execute the program providing latitude and longitude as arguments:
 
