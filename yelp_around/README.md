@@ -8,4 +8,10 @@ This directory contains sample Aerospike query programs for the
 Sample Query Programs
 ----------------------------------------------------------------
 
-#### [Nodejs Sample](nodejs)
+#### [Python Sample](python)
+
+#### [Java Sample](java)
+
+#### [Node.js Sample](nodejs)
+
+#### [C++ Sample](cplusplus)
