@@ -329,8 +329,11 @@ parse_arguments(int & argc, char ** & argv)
 		}
 	}
 
-    if (optind >= argc)
-        throwstream(runtime_error, "missing input-file argument");
+    if (optind >= argc) {
+		cerr << "missing input-file argument" << endl;
+		usage(argc, argv);
+		exit(1);
+	}
     g_infile = argv[optind];
 
 	// Make the index names contain the selected set name
