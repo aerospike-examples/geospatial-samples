@@ -1,10 +1,21 @@
 OpenStreetMap
-----------------------------------------------------------------
+================================================================
 
-Information about OpenStreetMap here.
+[OpenStreetMap](https://www.openstreetmap.org)
 
-References to official data sources.
+#### Entire World
 
+OpenStreetMap data for the entire world in
+[PBF format](http://wiki.openstreetmap.org/wiki/PBF_Format)
+is available for download at
+[Plant OSM](http://planet.osm.org/).
+
+#### Selected Regions
+
+OpenStreetMap data for selected regions in
+[PBF format](http://wiki.openstreetmap.org/wiki/PBF_Format)
+is available for download at
+[Mapzen](https://mapzen.com/data/metro-extracts)
 
 
 Loading OpenStreetMap Data
