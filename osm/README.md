@@ -8,7 +8,7 @@ OpenStreetMap
 OpenStreetMap data for the entire world in
 [PBF format](http://wiki.openstreetmap.org/wiki/PBF_Format)
 is available for download at
-[Plant OSM](http://planet.osm.org/).
+[Planet OSM](http://planet.osm.org/).
 
 #### Selected Regions
 
