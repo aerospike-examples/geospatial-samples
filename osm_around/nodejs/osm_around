@@ -30,6 +30,11 @@ var filter = aerospike.filter;
 var locbin = "loc";
 var valbin = "val";
 
+function now() {
+	tt = process.hrtime();
+	return tt[0] + (tt[1] / 1e9);
+}
+
 // Options parsing
 
 var argp = yargs
@@ -106,6 +111,8 @@ var lng = parseFloat(argv._[1]);
 function query_circle(client) {
 	var count = 0;
 
+	var t0 = now();
+	
 	var region = {
 		type: "Circle",
 		coordinates: [[lng, lat], argv.radius]
@@ -144,7 +151,9 @@ function query_circle(client) {
 	});
 
 	stream.on('end', function() {
-		console.log(count + " records found");
+		var t1 = now();
+		console.log(count + " records found in "
+					+ ((t1 - t0) * 1e3).toFixed(3) + " milliseconds");
 		process.exit(0)
 	});
 }
