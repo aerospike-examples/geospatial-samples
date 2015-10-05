@@ -43,12 +43,12 @@ def print_value(record):
     
 def query_circle(args, client):
     """Query for records inside a circle."""
-    region = aerospike.Geo({
+    region = aerospike.GeoJSON({
         'type': 'Circle',
         'coordinates': [[args.longitude, args.latitude], args.radius]
     })
     query = client.query(args.nspace, args.set)
-    query.where(aerospike.predicates.within(LOCBIN, region.dumps()))
+    query.where(aerospike.predicates.geo_within(LOCBIN, region.dumps()))
     if not args.category:
         # Basic search, no category filter
         query.select(VALBIN)
