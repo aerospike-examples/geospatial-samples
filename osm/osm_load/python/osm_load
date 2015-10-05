@@ -64,7 +64,7 @@ class NodeLoader(object):
 
                 # Construct a GeoJSON bin value to be indexed.
                 locobj = { 'type': "Point", 'coordinates': [ lng, lat ] }
-                locgeo = aerospike.Geo(locobj)
+                locgeo = aerospike.GeoJSON(locobj)
 
                 # Make a hash of the id to use for random selection.
                 hshval = self.id_to_hash(osmid)
@@ -92,8 +92,10 @@ def setup_aerospike(args):
 def create_index(args, client):
     """Create the geospatial index on the server"""
     policy = {}
-    client.index_2dsphere_create(args.nspace, args.set, LOCBIN, LOCNDX, policy)
-    client.index_integer_create(args.nspace, args.set, HSHBIN, HSHNDX, policy)
+    client.index_geo2dsphere_create(args.nspace, args.set,
+                                    LOCBIN, LOCNDX, policy)
+    client.index_integer_create(args.nspace, args.set,
+                                HSHBIN, HSHNDX, policy)
     
 def cleanup_aerospike(args, client):
     """Gracefully shutdown the connection to the server"""

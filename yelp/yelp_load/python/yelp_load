@@ -39,7 +39,7 @@ def process_data_file(args, client):
         locobj = { 'type': "Point",
                    'coordinates': [ entry['longitude'], entry['latitude'] ] }
         key = (args.nspace, args.set, entry['business_id'])
-        locval = aerospike.Geo(locobj)
+        locval = aerospike.GeoJSON(locobj)
         client.put(key, { VALBIN: line, LOCBIN: locval, MAPBIN: entry })
         g_nlines += 1
         if g_nlines % 1000 == 0:
@@ -56,7 +56,8 @@ def setup_aerospike(args):
 def create_index(args, client):
     """Create the geospatial index on the server"""
     policy = {}
-    client.index_2dsphere_create(args.nspace, args.set, LOCBIN, LOCNDX, policy)
+    client.index_geo2dsphere_create(args.nspace, args.set,
+                                    LOCBIN, LOCNDX, policy)
     
 def cleanup_aerospike(args, client):
     """Gracefully shutdown the connection to the server"""
