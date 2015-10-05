@@ -6,6 +6,13 @@ endif
 
 AEROSPIKE_CLIENT_ROOT = $(CLIENTREPO)
 
+OS = $(shell uname)
+
+AS_PLATFORM_DIR=Linux-x86_64
+ifeq ($(OS),Darwin)
+AS_PLATFORM_DIR=Darwin-x86_64
+endif
+
 CFLAGS +=	-g -Wall
 
 READOSMLIBS =	-lreadosm
@@ -17,17 +24,22 @@ LIBS += 	\
 			-lcrypto \
 			$(NULL)
 
-ASINCS +=	-I$(AEROSPIKE_CLIENT_ROOT)/target/Linux-x86_64/include
+ASINCS +=	-I$(AEROSPIKE_CLIENT_ROOT)/target/$(AS_PLATFORM_DIR)/include
 
 ASLIBS +=		\
-			-Wl,-rpath,$(AEROSPIKE_CLIENT_ROOT)/target/Linux-x86_64/lib \
-			-L$(AEROSPIKE_CLIENT_ROOT)/target/Linux-x86_64/lib \
+			-Wl,-rpath,$(AEROSPIKE_CLIENT_ROOT)/target/$(AS_PLATFORM_DIR)/lib \
+			-L$(AEROSPIKE_CLIENT_ROOT)/target/$(AS_PLATFORM_DIR)/lib \
 			-laerospike \
-			-llua \
 			-ldl \
 			-lcrypto \
+			$(NULL)
+
+ifeq ($(OS),Darwin)
+else
+ASLIBS += \
 			-lrt \
 			$(NULL)
+endif
 
 INCS += $(ASINCS)
 LIBS += $(ASLIBS)

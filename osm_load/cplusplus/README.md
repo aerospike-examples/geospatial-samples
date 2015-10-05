@@ -9,3 +9,6 @@ You need the readosm library:
 On RedHat/CentOS:
 
     sudo yum install -y readosm-devel
+
+On MacOS:
+    brew install readosm
