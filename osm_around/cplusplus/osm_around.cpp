@@ -212,7 +212,7 @@ cleanup_aerospike(aerospike * asp)
 void
 usage(int & argc, char ** & argv)
 {
-	cerr << "usage: " << argv[0] << " [options] -l <latitude> <longitude>" << endl
+	cerr << "usage: " << argv[0] << " [options] <latitude> <longitude>" << endl
 		 << "  options:" << endl
 		 << "    -u, --usage                 	display usage" << endl
 		 << "    -h, --host=HOST             	database host           [" << DEF_HOST << "]" << endl
@@ -231,8 +231,6 @@ parse_arguments(int & argc, char ** & argv)
 {
 	char * endp;
 
-	bool saw_loc = false;
-
 	static struct option long_options[] =
 		{
 			{"usage",                   no_argument,        0, 'u'},
@@ -242,7 +240,6 @@ parse_arguments(int & argc, char ** & argv)
 			{"password",                required_argument,  0, 'P'},
 			{"namespace",               required_argument,  0, 'n'},
 			{"set",                     required_argument,  0, 's'},
-			{"location",                required_argument,  0, 'l'},
 			{"radius-meters",           required_argument,  0, 'r'},
 			{"amenity",                 required_argument,  0, 'a'},
 			{0, 0, 0, 0}
@@ -251,14 +248,12 @@ parse_arguments(int & argc, char ** & argv)
 	while (true)
 	{
 		int optndx = 0;
-		int opt = getopt_long(argc, argv, "uh:p:U:P:n:s:l:r:a:",
+		int opt = getopt_long(argc, argv, "uh:p:U:P:n:s:r:a:",
 							  long_options, &optndx);
 
 		// Are we done processing arguments?
 		if (opt == -1)
 			break;
-
-		char const * argp = NULL;
 
 		switch (opt) {
 
@@ -293,20 +288,6 @@ parse_arguments(int & argc, char ** & argv)
 			g_set = optarg;
 			break;
 
-		case 'l':
-			saw_loc = true;
-			argp = argv[optind-1];
-			g_lat = strtod(argp, &endp);
-			if (endp == argp)
-				throwstream(runtime_error, "invalid latitude value: " << argp);
-			if (++optind > argc)
-				throwstream(runtime_error, "missing longitude value");
-			argp = argv[optind-1];
-			g_lng = strtod(argp, &endp);
-			if (endp == argp)
-				throwstream(runtime_error, "invalid longitude value: " << argp);
-			break;
-
 		case 'r':
 			g_radius = strtod(optarg, &endp);
 			if (*endp != '\0')
@@ -330,11 +311,26 @@ parse_arguments(int & argc, char ** & argv)
 		}
 	}
 
+    if (optind + 1 >= argc) {
+		cerr << "missing latitude and longitude arguments" << endl;
+		usage(argc, argv);
+		exit(1);
+	}
+
+	char const * argp = NULL;
+
+	argp = argv[optind++];
+	g_lat = strtod(argp, &endp);
+	if (endp == argp)
+		throwstream(runtime_error, "invalid latitude value: " << argp);
+	
+	argp = argv[optind++];
+	g_lng = strtod(argp, &endp);
+	if (endp == argp)
+		throwstream(runtime_error, "invalid longitude value: " << argp);
+	
 	if (g_radius < 0.0)
 		g_radius = DEF_RADIUS;
-
-	if (!saw_loc)
-		throwstream(runtime_error, "missing location (lat/lng) argument");
 }
 
 int

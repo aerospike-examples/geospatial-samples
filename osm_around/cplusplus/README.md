@@ -11,7 +11,7 @@ Running
 ----------------------------------------------------------------
 
     # What's around the Mountain View office?
-    OBJS/osm_around -l 37.421342 -122.098743 -r 300
+    OBJS/osm_around -r 300 -- 37.421342 -122.098743
 
     # Just show cafes
-    OBJS/osm_around -l 37.421342 -122.098743 -r 300 -a cafe
+    OBJS/osm_around -r 300 -a cafe -- 37.421342 -122.098743
