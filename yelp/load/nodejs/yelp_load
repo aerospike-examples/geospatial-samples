@@ -36,7 +36,10 @@ var mapbin = "map";
 
 var pending = 0;
 var count = 0;
-var readcmpl = false;
+var reader_done = false;
+var reader;
+var hiwater = 200;	// pause file reading when this many pending
+var lowater = 100;	// resume file reading when this many pending
 
 var t0;
 
@@ -134,7 +137,7 @@ if (argv.password !== null) {
 	config.password = argv.password;
 }
 
-function check_done() {
+function check_finished() {
 	// If there are puts outstanding we're not done.
 	if (pending != 0)
 		return;
@@ -147,7 +150,9 @@ function check_done() {
 }
 
 function insert_record(client, line) {
-	++pending;
+	if (++pending > hiwater) {
+		reader.pause();
+	}
 	var entry = JSON.parse(line);
 	var locobj = { type: "Point",
 				   coordinates: [entry['longitude'], entry['latitude']] }
@@ -164,9 +169,11 @@ function insert_record(client, line) {
 		if (++count % 1000 == 0) {
 			process.stderr.write('.');
 		}
-		--pending;
-		if (readcmpl) {
-			check_done();
+		if (--pending < lowater) {
+			reader.resume();
+		}
+		if (reader_done) {
+			check_finished();
 		}
 	});
 }
@@ -175,18 +182,18 @@ function read_infile(client) {
 	// Start the load timer.
 	t0 = now();
 	
-	var rl = readline.createInterface({
+	reader = readline.createInterface({
 		input: require('fs').createReadStream(infile),
 		terminal: false
 	});
 
-	rl.on('line', function(line) {
+	reader.on('line', function(line) {
 		insert_record(client, line);
 	});
 
-	rl.on('close', function() {
-		readcmpl = true;
-		check_done();
+	reader.on('close', function() {
+		reader_done = true;
+		check_finished();
 	});
 }
 
