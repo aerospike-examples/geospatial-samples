@@ -19,6 +19,7 @@
 import argparse
 import json
 import sys
+import threading
 import time
 
 import aerospike
@@ -28,12 +29,21 @@ LOCBIN = "loc"
 MAPBIN = "map"
 LOCNDX = None
 
+g_lock = threading.Lock()
 g_nlines = 0
 
 def process_data_file(args, client):
     """Read data from input file and insert records"""
     global g_nlines
-    for line in args.infile:
+    global g_lock
+    while True:
+        try:
+            with g_lock:
+                line = args.infile.next()
+                g_nlines += 1
+                nlines = g_nlines
+        except StopIteration:
+            return
         line = line.rstrip()
         entry = json.loads(line)
         locobj = { 'type': "Point",
@@ -41,10 +51,8 @@ def process_data_file(args, client):
         key = (args.nspace, args.set, entry['business_id'])
         locval = aerospike.GeoJSON(locobj)
         client.put(key, { VALBIN: line, LOCBIN: locval, MAPBIN: entry })
-        g_nlines += 1
-        if g_nlines % 1000 == 0:
+        if nlines % 1000 == 0:
             sys.stderr.write('.')
-    sys.stderr.write('\n')
 
 def setup_aerospike(args):
     """Establish connection to server"""
@@ -106,6 +114,15 @@ if __name__ == '__main__':
     create_index(args, client)
 
     t0 = time.time()
+    nthreads = 10
+    thrds = []
+    for ii in xrange(0, nthreads):
+        tt = threading.Thread(target=process_data_file, args=(args, client))
+        tt.start()
+        thrds.append(tt)
+    for ii in xrange(0, nthreads):
+        tt.join()
+    sys.stderr.write('\n')
     process_data_file(args, client)
     t1 = time.time()
 
