@@ -70,101 +70,6 @@ string	g_locndx;
 	
 size_t g_npoints = 0;
 
-#if 0	
-int
-handle_node(void const * user_data, readosm_node const * node)
-{
-    aerospike * asp = (aerospike *) user_data;
-
-	// First scan the tags to see if there is a name.
-    char const * name = NULL;
-    for (int ii = 0; ii < node->tag_count; ++ii) {
-        if (strcmp(node->tags[ii].key, "name") == 0) {
-            name = node->tags[ii].value;
-            break;
-        }
-    }
-    if (!name)
-        return READOSM_OK;
-
-    int64_t hshval = id_to_hash(node->id);
-
-	size_t ntags = node->tag_count;
-
-	// We'll insert all the tags + osmid, lat and long.
-	as_map * asmap = (as_map *) as_hashmap_new(ntags + 3);
-    Scoped<json_t *> valobj(json_object(), NULL, json_decref);
-    for (int ii = 0; ii < node->tag_count; ++ii) {
-		as_map_set(asmap,
-				   (as_val *) as_string_new((char *) node->tags[ii].key, false),
-				   (as_val *) as_string_new((char *) node->tags[ii].value, false));
-		json_object_set_new(valobj,
-							node->tags[ii].key,
-							json_string(node->tags[ii].value));
-    }
-	// Insert osmid
-	as_map_set(asmap,
-			   (as_val *) as_string_new((char *) "osmid", false),
-			   (as_val *) as_integer_new(node->id));
-	json_object_set_new(valobj, "osmid", json_real(node->id));
-
-	// Insert latitude and longitude
-	as_map_set(asmap,
-			   (as_val *) as_string_new((char *) "latitude", false),
-			   (as_val *) as_double_new(node->latitude));
-	as_map_set(asmap,
-			   (as_val *) as_string_new((char *) "longitude", false),
-			   (as_val *) as_double_new(node->longitude));
-	json_object_set_new(valobj, "latitude", json_real(node->latitude));
-	json_object_set_new(valobj, "longitude", json_real(node->longitude));
-
-    Scoped<char *> valstr(json_dumps(valobj, JSON_COMPACT), NULL,
-                          (void (*)(char*)) free);
-
-    // cout << valstr << endl;
-
-	// Construct the GeoJSON loc bin value.
-    Scoped<json_t *> locobj(json_object(), NULL, json_decref);
-    json_object_set_new(locobj, "type", json_string("Point"));
-    Scoped<json_t *> coordobj(json_array(), NULL, json_decref);
-    json_array_append_new(coordobj, json_real(node->longitude));
-    json_array_append_new(coordobj, json_real(node->latitude));
-    json_object_set(locobj, "coordinates", coordobj);
-    Scoped<char *> locstr(json_dumps(locobj, JSON_COMPACT), NULL,
-                          (void (*)(char*)) free);
-
-    as_key key;
-    as_key_init_int64(&key, g_namespace.c_str(), g_set.c_str(), node->id);
-
-    uint16_t nbins = 4;
-    
-	as_record rec;
-	as_record_inita(&rec, nbins);
-	as_record_set_geojson_str(&rec, g_locbin, locstr);
-	as_record_set_str(&rec, g_valbin, valstr);
-	as_record_set_map(&rec, g_mapbin, asmap);
-	as_record_set_int64(&rec, g_hshbin, hshval);
-    
-	as_error err;
-	as_status rv = aerospike_key_put(asp, &err, NULL, &key, &rec);
-	as_record_destroy(&rec);
-	as_key_destroy(&key);
-	
-	if (rv != AEROSPIKE_OK)
-        throwstream(runtime_error, "aerospike_key_put failed: "
-                    << err.code << " - " << err.message);
-
-    ++g_npoints;
-
-	if (g_npoints % 1000 == 0)
-		cerr << '.';
-	
-    // cout << json_dumps(rootobj, JSON_COMPACT) << endl;
-
-    return READOSM_OK;
-}
-#endif
-
 double
 fetch_coord(json_t * obj, char const * name, string const & line) {
 	json_t * coordobj = json_object_get(obj, name);
@@ -227,8 +132,12 @@ handle_line(aerospike * asp, string const & line)
 	as_record_set_str(&rec, g_valbin, line.c_str());
 	as_record_set_map(&rec, g_mapbin, mapp);
     
+	as_policy_write wpol;
+	as_policy_write_init(&wpol);
+	wpol.timeout = 10 * 1000;
+
 	as_error aserr;
-	as_status rv = aerospike_key_put(asp, &aserr, NULL, &key, &rec);
+	as_status rv = aerospike_key_put(asp, &aserr, &wpol, &key, &rec);
 	as_record_destroy(&rec);
 	as_key_destroy(&key);
 	
