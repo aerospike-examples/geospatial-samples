@@ -19,6 +19,7 @@
 #include <getopt.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -148,14 +149,28 @@ handle_line(aerospike * asp, string const & line)
 	if (__sync_add_and_fetch(&g_npoints, 1) % 1000 == 0)
 		cerr << '.';
 }
-	
-void
-process_lines(aerospike * asp, ifstream & ifstrm)
+
+pthread_mutex_t ifstrm_lock = PTHREAD_MUTEX_INITIALIZER;
+struct param_t {
+	aerospike * asp;
+	ifstream & ifstrm;
+	param_t(aerospike * i_asp, ifstream & i_ifstrm)
+		: asp(i_asp), ifstrm(i_ifstrm) {}
+};
+
+void *
+process_lines(void * argp)
 {
+	param_t * pp = (param_t *) argp;
 	string line;
-	while (getline(ifstrm, line)) {
-		handle_line(asp, line);
+	pthread_mutex_lock(&ifstrm_lock);
+	while (getline(pp->ifstrm, line)) {
+		pthread_mutex_unlock(&ifstrm_lock);
+		handle_line(pp->asp, line);
+		pthread_mutex_lock(&ifstrm_lock);
 	}
+	pthread_mutex_unlock(&ifstrm_lock);
+	return NULL;
 }
 	
 uint64_t
@@ -324,8 +339,17 @@ run(int & argc, char ** & argv)
     setup_aerospike(asp);
     create_indexes(asp);
     
+	param_t param(asp, ifstrm);
+	
     uint64_t t0 = now();
-	process_lines(asp, ifstrm);
+	size_t nthreads = 100;
+	vector<pthread_t> threads(nthreads);
+	for (size_t ndx = 0; ndx < nthreads; ++ndx) {
+		pthread_create(&threads[ndx], NULL, process_lines, &param);
+	}
+	for (size_t ndx = 0; ndx < nthreads; ++ndx) {
+		pthread_join(threads[ndx], NULL);
+	}
     uint64_t t1 = now();
 
 	cerr << endl;
