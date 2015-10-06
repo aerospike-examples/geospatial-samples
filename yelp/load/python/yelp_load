@@ -111,4 +111,4 @@ if __name__ == '__main__':
 
     cleanup_aerospike(args, client)
 
-    print "loaded %d lines in %.3f seconds" % (g_nlines, t1 - t0)
+    print "loaded %d points in %.3f seconds" % (g_nlines, t1 - t0)

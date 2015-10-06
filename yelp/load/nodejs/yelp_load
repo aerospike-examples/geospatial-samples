@@ -23,13 +23,22 @@ var client = aerospike.client;
 var yargs = require('yargs');
 var events = require('events');
 var util = require('util');
+var readline = require('readline');
 
 var Policy = aerospike.policy;
 var Status = aerospike.status;
 var filter = aerospike.filter;
+var GeoJSON = aerospike.GeoJSON;
 
 var locbin = "loc";
 var valbin = "val";
+var mapbin = "map";
+
+var pending = 0;
+var count = 0;
+var readcmpl = false;
+
+var t0;
 
 function now() {
 	tt = process.hrtime();
@@ -90,12 +99,12 @@ if (argv._.length > 1) {
 	argp.showHelp();
 	return;
 }
-
 if (argv._.length < 1) {
 	console.error("missing infile argument");
 	argp.showHelp();
 	return;
 }
+var infile = argv._[0];
 
 var locndx = argv.set + "-loc-index";
 
@@ -110,8 +119,11 @@ config = {
 	//modlua userpath
 	modlua: {
 		userPath: __dirname
-	}
+	},
 
+	policies: {
+        timeout: 10 * 1000
+    }
 };
 
 if (argv.user !== null) {
@@ -122,15 +134,67 @@ if (argv.password !== null) {
 	config.password = argv.password;
 }
 
+function check_done() {
+	// If there are puts outstanding we're not done.
+	if (pending != 0)
+		return;
+	
+	var t1 = now();
+	process.stderr.write('\n');
+	console.log("loaded " + count + " points in "
+				+ (t1 - t0).toFixed(3) + " seconds");
+	process.exit(0);
+}
+
+function insert_record(client, line) {
+	++pending;
+	var entry = JSON.parse(line);
+	var locobj = { type: "Point",
+				   coordinates: [entry['longitude'], entry['latitude']] }
+	bins = {}
+	bins[valbin] = line.trim();
+	bins[locbin] = GeoJSON(JSON.stringify(locobj));
+	bins[mapbin] = entry;
+	var key = { ns: argv.namespace, set: argv.set, key: entry['business_id'] }
+	client.put(key, bins, function(err, key) {
+		if (err.code != Status.AEROSPIKE_OK) {
+			console.error("insert_records: put failed: ", err.message);
+			process.exit(1);
+		}
+		if (++count % 1000 == 0) {
+			process.stderr.write('.');
+		}
+		--pending;
+		if (readcmpl) {
+			check_done();
+		}
+	});
+}
+
 function read_infile(client) {
-	HERE HERE HERRE
+	// Start the load timer.
+	t0 = now();
+	
+	var rl = readline.createInterface({
+		input: require('fs').createReadStream(infile),
+		terminal: false
+	});
+
+	rl.on('line', function(line) {
+		insert_record(client, line);
+	});
+
+	rl.on('close', function() {
+		readcmpl = true;
+		check_done();
+	});
 }
 
 function create_index(client) {
     var options = {
         ns:  argv.namespace,
         set: argv.set,
-        bin : locbin,
+        bin: locbin,
 		index: locndx
     };
 	client.createGeo2DSphereIndex(options, function(err) {
@@ -154,6 +218,7 @@ aerospike.client(config).connect(function (err, client) {
 
 	create_index(client);
 });
+
 // Local Variables:
 // mode: javascript
 // End:
