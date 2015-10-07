@@ -22,8 +22,10 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.Map;
-	
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -84,51 +86,74 @@ public class Load {
 		}
 	}
 
-	private static void handleLine(Parameters params,
-								   AerospikeClient client,
-								   String line) throws Exception {
-		JsonParser parser = new JsonParser();
-		JsonElement element = parser.parse(line);
-		JsonObject obj = element.getAsJsonObject();
-
-		double latitude = obj.get("latitude").getAsDouble();
-		double longitude = obj.get("longitude").getAsDouble();
-		String busid = obj.get("business_id").getAsString();
-		
-		JsonObject locobj = new JsonObject();
-		locobj.addProperty("type", "Point");
-		JsonArray coords = new JsonArray();
-		coords.add(longitude);
-		coords.add(latitude);
-		locobj.add("coordinates", coords);
-		Gson gson = new GsonBuilder().create();
-		String locstr = gson.toJson(locobj);
-
-		java.lang.reflect.Type mapType =
-			new TypeToken<Map<String, Object>>(){}.getType();
-		Gson gson2 = new Gson();
-		Map<String, Object> mapval = gson2.fromJson(line, mapType);
-
-		Key key = new Key(params.namespace, params.set, busid);
-
-		WritePolicy policy = new WritePolicy();
-		Bin locbin = Bin.asGeoJSON(params.locbin, locstr);
-		Bin valbin = new Bin(params.valbin, line);
-		Bin mapbin = new Bin(params.mapbin, mapval);
-		client.put(policy, key, locbin, valbin, mapbin);
-		
-		if (++count % 1000 == 0) {
-			System.err.write('.');
-			System.err.flush();
-		}
-	}
+	private static final Lock lock = new ReentrantLock();
 	
-	private static void processLines(Parameters params,
-									 AerospikeClient client,
-									 BufferedReader br) throws Exception {
-		String line;
-		while ((line = br.readLine()) != null)   {
-			handleLine(params, client, line.trim());
+	public static class LoadWorker implements Runnable {
+		private Parameters params;
+		private AerospikeClient client;
+		private BufferedReader br;
+
+		LoadWorker(Parameters params,
+				   AerospikeClient client,
+				   BufferedReader br) {
+			this.params = params;
+			this.client = client;
+			this.br = br;
+		}
+		
+		private void handleLine(String line) throws Exception {
+			JsonParser parser = new JsonParser();
+			JsonElement element = parser.parse(line);
+			JsonObject obj = element.getAsJsonObject();
+
+			double latitude = obj.get("latitude").getAsDouble();
+			double longitude = obj.get("longitude").getAsDouble();
+			String busid = obj.get("business_id").getAsString();
+		
+			JsonObject locobj = new JsonObject();
+			locobj.addProperty("type", "Point");
+			JsonArray coords = new JsonArray();
+			coords.add(longitude);
+			coords.add(latitude);
+			locobj.add("coordinates", coords);
+			Gson gson = new GsonBuilder().create();
+			String locstr = gson.toJson(locobj);
+
+			java.lang.reflect.Type mapType =
+				new TypeToken<Map<String, Object>>(){}.getType();
+			Gson gson2 = new Gson();
+			Map<String, Object> mapval = gson2.fromJson(line, mapType);
+
+			Key key = new Key(params.namespace, params.set, busid);
+
+			WritePolicy policy = new WritePolicy();
+			policy.timeout = 10 * 1000;
+		
+			Bin locbin = Bin.asGeoJSON(params.locbin, locstr);
+			Bin valbin = new Bin(params.valbin, line);
+			Bin mapbin = new Bin(params.mapbin, mapval);
+			client.put(policy, key, locbin, valbin, mapbin);
+		
+			if (++count % 1000 == 0) {
+				System.err.write('.');
+				System.err.flush();
+			}
+		}
+	
+		public void run() {
+			try {
+				String line;
+				lock.lock();
+				while ((line = br.readLine()) != null)   {
+					lock.unlock();
+					handleLine(line.trim());
+					lock.lock();
+				}
+				lock.unlock();
+			}
+			catch (Exception ex) {
+				lock.unlock();
+			}
 		}
 	}
 	
@@ -224,7 +249,15 @@ public class Load {
 
 		try {
 			long t0 = System.nanoTime();
-			processLines(params, client, br);
+			int nthreads = 100;
+			Thread[] threads = new Thread[nthreads];
+			for (int ii = 0; ii < nthreads; ++ii) {
+				threads[ii] = new Thread(new LoadWorker(params, client, br));
+				threads[ii].start();
+			}
+			for (int ii = 0; ii < nthreads; ++ii) {
+				threads[ii].join();
+			}
 			long t1 = System.nanoTime();
 			System.err.write('\n');
 			System.out.printf("loaded %d points in %.3f seconds\n",
