@@ -1,12 +1,6 @@
 
-Setup
+Building
 ----------------------------------------------------------------
-
-    export PREFIX=~/aerospike/aerospike-client-c/target/Linux-x86_64
-    export AEROSPIKE_LUA_PATH=/opt/aerospike/client/sys/udf/lua
-    export DOWNLOAD=0
-
-    npm install /home/ksedgwic/aerospike/aerospike-client-nodejs
 
     npm install .
 
