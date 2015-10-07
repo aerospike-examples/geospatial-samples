@@ -1,10 +1,14 @@
-Running
+
+Prerequisites
 ----------------------------------------------------------------
 
-You need one of these or similar:
+Install Aerospike using pip:
 
-    export PYTHONPATH=${HOME}/aerospike/aerospike-client-python/build/lib.linux-x86_64-2.7
-    export PYTHONPATH=${HOME}/aerospike/aerospike-client-python/build/lib.linux-x86_64-2.6
+    sudo pip install aerospike
+
+
+Running
+----------------------------------------------------------------
 
 Get usage help:
 
