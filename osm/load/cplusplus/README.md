@@ -2,6 +2,10 @@
 Prerequsites
 ----------------------------------------------------------------
 
+Install the Aerospike C Client from the download page:
+
+    http://www.aerospike.com/download/client/c/3.1.24/
+
 You need the readosm library:
 
     https://www.gaia-gis.it/fossil/readosm/index
@@ -14,6 +18,12 @@ On MacOS:
 
     brew install readosm
 
+
+Building
+----------------------------------------------------------------
+
+    make
+    
 
 Running
 ----------------------------------------------------------------

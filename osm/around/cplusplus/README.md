@@ -1,8 +1,14 @@
 
-Building
+Prerequsites
 ----------------------------------------------------------------
 
-    export CLIENTREPO=~/aerospike/aerospike-client-c
+Install the Aerospike C Client from the download page:
+
+    http://www.aerospike.com/download/client/c/3.1.24/
+
+
+Building
+----------------------------------------------------------------
 
     make
     
