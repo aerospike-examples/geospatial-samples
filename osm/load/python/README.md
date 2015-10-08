@@ -32,6 +32,7 @@ Docker
 A Docker file is included that packages up the code and dependencies to run the load, 
 
 Usage:
+
      docker build -t <myuser>/osm-load .
 
      docker run -it --rm -v ~/Downloads:/data <myuser>/osm-load -U dbadmin -P boohoo -h C-9f9ff9f99f.aerospike.io -p 3200 /data/san-francisco-bay_california.osm.pbf 
