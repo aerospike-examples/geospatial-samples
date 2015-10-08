@@ -9,7 +9,11 @@ Install Aerospike using pip:
 Install imposm:
 
     sudo yum install -y protobuf-compiler protobuf-devel
-    sudo pip install imposm.parser    
+    sudo pip install imposm.parser   
+    
+Install imposm on Mac:
+    brew install protobuf
+    sudo pip install imposm.parser
 
 Running
 ----------------------------------------------------------------
