@@ -41,7 +41,7 @@ location.
 The Yelp Challenge Business Data can be downloaded directly from Yelp
 at this URL:
 
-    [https://www.yelp.com/dataset_challenge/dataset](https://www.yelp.com/dataset_challenge/dataset)
+[https://www.yelp.com/dataset_challenge/dataset](https://www.yelp.com/dataset_challenge/dataset)
 
 After downloading the data, untar the data file and extract the
 business data file called "yelp_academic_dataset_business.json".
