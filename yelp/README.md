@@ -65,10 +65,10 @@ are inside a circle around a chosen point:
 
 #### Sample Query Programs
 
-* [Python](around/python)
+* [Python Query](around/python)
 
-* [Java](around/java)
+* [Java Query](around/java)
 
-* [Node.js](around/nodejs)
+* [Node.js Query](around/nodejs)
 
-* [C++](around/cplusplus)
+* [C++ Query](around/cplusplus)
