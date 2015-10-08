@@ -32,6 +32,7 @@ ASLIBS +=		\
 			-laerospike \
 			-ldl \
 			-lcrypto \
+			-lpthread \
 			$(NULL)
 
 ifeq ($(OS),Darwin)
