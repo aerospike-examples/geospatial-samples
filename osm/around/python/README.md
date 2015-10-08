@@ -6,7 +6,6 @@ Install Aerospike using pip:
 
     sudo pip install aerospike
 
-
 Running
 ----------------------------------------------------------------
 
@@ -21,3 +20,18 @@ Execute the program providing latitude and longitude as arguments:
 
     # Just show cafes
     ./osm_around -r 300 -a cafe 37.421342 -122.098743
+
+    # Using the Aerospike Cloud Service
+    ./osm_around -U dbadmin -P mypasswd -h C-9f9ff9f99f.aerospike.io -p 3200 -r 300 -a cafe 37.421342 -122.098743
+
+Docker
+----------------------------------------------------------------
+A Docker file is included that packages up the code and dependencies to run the load, 
+
+Usage:
+
+     docker build -t <myuser>/osm-around .
+
+     docker run -it --rm <myuser>/osm-around -U dbadmin -P mypasswd -h C-9f9ff9f99f.aerospike.io -p 3200 -r 300 -a cafe 37.421342 -122.098743
+
+

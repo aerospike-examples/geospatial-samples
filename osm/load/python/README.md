@@ -9,8 +9,7 @@ Install Aerospike using pip:
 Install imposm:
 
     sudo yum install -y protobuf-compiler protobuf-devel
-    sudo pip install imposm.parser
-    
+    sudo pip install imposm.parser    
 
 Running
 ----------------------------------------------------------------
@@ -35,5 +34,5 @@ Usage:
 
      docker build -t <myuser>/osm-load .
 
-     docker run -it --rm -v ~/Downloads:/data <myuser>/osm-load -U dbadmin -P boohoo -h C-9f9ff9f99f.aerospike.io -p 3200 /data/san-francisco-bay_california.osm.pbf 
+     docker run -it --rm -v ~/Downloads:/data <myuser>/osm-load -U dbadmin -P mypasswd -h C-9f9ff9f99f.aerospike.io -p 3200 /data/san-francisco-bay_california.osm.pbf 
 

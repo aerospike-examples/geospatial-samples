@@ -67,7 +67,8 @@ def setup_aerospike(args):
     config = {
         'hosts': [ (args.host, args.port), ],
         'lua': { 'user_path': ".",
-                 'system_path': "/opt/aerospike/client/sys/udf/lua" }
+#                 'system_path': "/opt/aerospike/client/sys/udf/lua/" }
+                 'system_path': "/usr/local/aerospike/lua/" }
     }
     client = aerospike.client(config)
     client.connect(args.user, args.passwd)
