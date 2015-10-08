@@ -52,6 +52,8 @@ This file can be directly loaded by the sample loader programs.
 
 * [Python Loader](load/python)
 
+* [Java Loader](load/java)
+
 * [Node.js Loader](load/nodejs)
 
 
