@@ -37,3 +37,15 @@ Usage:
 Execute the program, argument is path to osm pbf data file:
 
     OBJS/osm_load san-francisco-bay_california.osm.pbf
+
+Docker
+----------------------------------------------------------------
+A Docker file is included that packages up the code and dependencies to run the load, 
+
+Usage:
+
+     docker build -t <myuser>/osm-load-cplusplus .
+
+     docker run -it --rm -v ~/Downloads:/data <myuser>/osm-load-cplusplus -U dbadmin -P mypasswd -h C-9f9ff9f99f.aerospike.io -p 3200 /data/san-francisco-bay_california.osm.pbf 
+
+
