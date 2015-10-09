@@ -44,5 +44,5 @@ Usage:
 
      docker build -t <myuser>/osm-load .
 
-     docker run -it --rm -v ~/Downloads:/data <myuser>/osm-load -U dbadmin -P mypasswd -h C-9f9ff9f99f.aerospike.io -p 3200 /data/san-francisco-bay_california.osm.pbf 
+     docker run --rm -v ~/Downloads:/data <myuser>/osm-load -U dbadmin -P mypasswd -h C-9f9ff9f99f.aerospike.io -p 3200 /data/san-francisco-bay_california.osm.pbf 
 

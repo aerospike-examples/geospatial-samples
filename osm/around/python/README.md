@@ -32,6 +32,6 @@ Usage:
 
      docker build -t <myuser>/osm-around .
 
-     docker run -it --rm <myuser>/osm-around -U dbadmin -P mypasswd -h C-9f9ff9f99f.aerospike.io -p 3200 -r 300 -a cafe 37.421342 -122.098743
+     docker run --rm <myuser>/osm-around -U dbadmin -P mypasswd -h C-9f9ff9f99f.aerospike.io -p 3200 -r 300 -a cafe 37.421342 -122.098743
 
 

@@ -24,6 +24,7 @@ LIBS += 	\
 
 ASINCS +=	-I$(AEROSPIKE_CLIENT_ROOT)/target/$(AS_PLATFORM_DIR)/include
 
+
 ASLIBS +=		\
 			-Wl,-rpath,$(AEROSPIKE_CLIENT_ROOT)/target/$(AS_PLATFORM_DIR)/lib \
 			-L$(AEROSPIKE_CLIENT_ROOT)/target/$(AS_PLATFORM_DIR)/lib \
