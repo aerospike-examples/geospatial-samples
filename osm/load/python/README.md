@@ -6,10 +6,15 @@ Install Aerospike using pip:
 
     sudo pip install aerospike
 
-Install imposm:
+Install imposm on RedHat:
 
     sudo yum install -y protobuf-compiler protobuf-devel
     sudo pip install imposm.parser   
+
+Install imposm on Ubuntu:
+
+    sudo apt-get install protobuf-compiler libprotobuf-dev
+    sudo pip install imposm.parser
     
 Install imposm on Mac:
 
