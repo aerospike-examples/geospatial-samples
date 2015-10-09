@@ -12,6 +12,7 @@ Install imposm:
     sudo pip install imposm.parser   
     
 Install imposm on Mac:
+
     brew install protobuf
     sudo pip install imposm.parser
 
