@@ -13,10 +13,12 @@ You need the readosm library:
 On RedHat/CentOS:
 
     sudo yum install -y readosm-devel
+    sudo yum install -u jansson-devel
 
 On MacOS:
 
     brew install readosm
+    brew install jansson
 
 
 Building
