@@ -18,6 +18,7 @@
 
 import argparse
 import json
+import os.path
 import sys
 import time
 
@@ -64,10 +65,11 @@ def register_udf(args, client):
     
 def setup_aerospike(args):
     """Establish connection to server"""
+    lua_sys_path = os.path.dirname(aerospike.__file__) + "/../../../aerospike/lua"
     config = {
         'hosts': [ (args.host, args.port), ],
         'lua': { 'user_path': ".",
-                 'system_path': "/opt/aerospike/client/sys/udf/lua" }
+                 'system_path': lua_sys_path }
     }
     client = aerospike.client(config)
     client.connect(args.user, args.passwd)
