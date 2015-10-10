@@ -36,7 +36,7 @@ function queryPosition(pos) {
     };
     console.log(region);
     $.ajax({
-        url: "http://localhost:8888/query",
+        url: "/query",
         type: "POST",
         data: JSON.stringify(region),
         dataType: "json",
