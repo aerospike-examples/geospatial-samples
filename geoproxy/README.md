@@ -3,19 +3,26 @@ Prerequisites
 ----------------------------------------------------------------
 
     sudo pip install tornado
+    // make sure you have gcc, (YUM) openssl-devel or (APT) libssl-dev
+    sudo pip install aerospike
 
 
 Running the Proxy
 ----------------------------------------------------------------
 
+This runs a proxy at localhost 8888. You probably want to point to a cluster at openstreetmap.
+It must be configured to point at an aerospike.io server that has openstreetmap.
+Please replace your server with 
+
 Usage:
 
     ./geoproxy --usage
 
-
 Normal:
 
     ./geoproxy
+    
+    ./geoproxy  -h C-83cd437ea7.aerospike.io -p 3200 -U dbadmin -P paranoia -n geo 
 
 
 Testing the Proxy
