@@ -21,8 +21,14 @@ Normal:
 Testing the Proxy
 ----------------------------------------------------------------
 
+Fetch the web page:
+
+    curl http://localhost:8888/web/index.html
+
+Make a query:
+
     curl \
         -H "Content-Type: application/json" \
         -X POST \
         -d '{"username":"xyz","password":"xyz"}' \
-        http://localhost:8888/
+        http://localhost:8888/query

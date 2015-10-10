@@ -8,18 +8,11 @@ import tornado.ioloop
 import tornado.web
 
 g_outfile = None
-g_sleep_msec = None
-g_error_code = None
 
-class MainHandler(tornado.web.RequestHandler):
+class QueryHandler(tornado.web.RequestHandler):
     def post(self):
         g_outfile.write(self.request.body + '\n')
-        if g_sleep_msec:
-            time.sleep(g_sleep_msec / 1000.0)
-        if g_error_code:
-            self.send_error(g_error_code)
-        else:
-            self.write("OK")
+        self.write("OK")
 
 class HelpfulParser(argparse.ArgumentParser):
     """Prints usage when an error is encountered"""
@@ -48,6 +41,9 @@ if __name__ == "__main__":
     else:
         g_outfile = sys.stdout
 
-    app = tornado.web.Application([(r"/", MainHandler),])
+    app = tornado.web.Application([
+        (r"/web/(.*)", tornado.web.StaticFileHandler, {"path": "./html/"}),
+        (r"/query", QueryHandler),
+    ])
     app.listen(args.port)
     tornado.ioloop.IOLoop.current().start()
