@@ -25,7 +25,7 @@ class QueryHandler(tornado.web.RequestHandler):
         records = []
         def handle_record(tup):
             (key, metadata, record) = tup
-            records.append(record[VALBIN])
+            records.append(json.loads(record[VALBIN]))
         query.foreach(handle_record)
         self.write(json.dumps(records))
 
