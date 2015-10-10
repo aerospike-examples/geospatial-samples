@@ -41,7 +41,8 @@ function queryPosition(pos) {
         data: JSON.stringify(region),
         dataType: "json",
         success: function (result) {
-            var fmtResults = "<pre>" + JSON.stringify(result) + "</pre>";
+            var fmtResults =
+                "<pre>" + JSON.stringify(result, null, 2) + "</pre>";
             document.getElementById("results").innerHTML = fmtResults;
         },
         error: function (xhr, ajaxOptions, thrownError) {
