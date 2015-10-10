@@ -15,11 +15,13 @@ VALBIN = "val"
 LOCBIN = "loc"
 
 g_outfile = None
+g_args = None
 
 class QueryHandler(tornado.web.RequestHandler):
     def post(self):
+        global g_args
         region = self.request.body
-        query = client.query(args.nspace, args.set)
+        query = client.query(g_args.nspace, g_args.set)
         query.where(aerospike.predicates.geo_within(LOCBIN, region))
         query.select(VALBIN)
         records = []
@@ -36,21 +38,23 @@ class HelpfulParser(argparse.ArgumentParser):
         self.print_help()
         sys.exit(2)
     
-def setup_aerospike(args):
+def setup_aerospike():
     """Establish connection to server"""
+    global g_args
     lua_sys_path = os.path.dirname(aerospike.__file__) \
                    + "/../../../aerospike/lua"
     config = {
-        'hosts': [ (args.host, args.port), ],
+        'hosts': [ (g_args.host, g_args.port), ],
         'lua': { 'user_path': ".",
                  'system_path': lua_sys_path }
     }
     client = aerospike.client(config)
-    client.connect(args.user, args.passwd)
+    client.connect(g_args.user, g_args.passwd)
     return client
 
-def cleanup_aerospike(args, client):
+def cleanup_aerospike(client):
     """Gracefully shutdown the connection to the server"""
+    global g_args
     client.close()
 
 def process_args():
@@ -77,15 +81,15 @@ def process_args():
     return parser.parse_args()
         
 if __name__ == "__main__":
-    args = process_args()
+    g_args = process_args()
     
     g_outfile = sys.stdout
 
-    client = setup_aerospike(args)
+    client = setup_aerospike()
 
     app = tornado.web.Application([
         (r"/web/(.*)", tornado.web.StaticFileHandler, {"path": "./html/"}),
         (r"/query", QueryHandler),
     ])
-    app.listen(args.proxy)
+    app.listen(g_args.proxy)
     tornado.ioloop.IOLoop.current().start()
