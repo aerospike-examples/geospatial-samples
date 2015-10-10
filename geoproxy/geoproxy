@@ -1,18 +1,33 @@
 #!/usr/bin/env python
 
+import argparse
+import json
+import os.path
 import sys
 import time
-import argparse
+
+import aerospike
 
 import tornado.ioloop
 import tornado.web
+
+VALBIN = "val"
+LOCBIN = "loc"
 
 g_outfile = None
 
 class QueryHandler(tornado.web.RequestHandler):
     def post(self):
-        g_outfile.write(self.request.body + '\n')
-        self.write("OK")
+        region = self.request.body
+        query = client.query(args.nspace, args.set)
+        query.where(aerospike.predicates.geo_within(LOCBIN, region))
+        query.select(VALBIN)
+        records = []
+        def handle_record(tup):
+            (key, metadata, record) = tup
+            records.append(record)
+        query.foreach(handle_record)
+        self.write(json.dumps(records))
 
 class HelpfulParser(argparse.ArgumentParser):
     """Prints usage when an error is encountered"""
@@ -21,29 +36,56 @@ class HelpfulParser(argparse.ArgumentParser):
         self.print_help()
         sys.exit(2)
     
+def setup_aerospike(args):
+    """Establish connection to server"""
+    lua_sys_path = os.path.dirname(aerospike.__file__) \
+                   + "/../../../aerospike/lua"
+    config = {
+        'hosts': [ (args.host, args.port), ],
+        'lua': { 'user_path': ".",
+                 'system_path': lua_sys_path }
+    }
+    client = aerospike.client(config)
+    client.connect(args.user, args.passwd)
+    return client
+
+def cleanup_aerospike(args, client):
+    """Gracefully shutdown the connection to the server"""
+    client.close()
+
 def process_args():
     parser = HelpfulParser(
         add_help=False,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-u', '--usage', action="help",
                         help="show this help message and exit")
-    parser.add_argument("-p", "--port", type=int, dest='port',
-                        default=8888, help="listen on port")
-    parser.add_argument("-o", "--outfile", type=str, dest='outfile',
-                        help="output file")
+    parser.add_argument('-h', '--host', metavar='HOST', type=str,
+                        default='localhost', help='Server hostname')
+    parser.add_argument('-p', '--port', metavar='PORT', type=int,
+                        default='3000', help='Server port')
+    parser.add_argument('-U', '--user', metavar='USER', type=str,
+                        default=None, help='Username')
+    parser.add_argument('-P', '--passwd', metavar='PW', type=str,
+                        default=None, help='Password')
+    parser.add_argument('-n', '--nspace', metavar='NS', type=str,
+                        default='test', help='Namespace')
+    parser.add_argument('-s', '--set', metavar='SET', type=str,
+                        default='osm', help='Set name')
+    parser.add_argument("-x", "--proxy-port", type=int, dest='proxy',
+                        default=8888, metavar='X',
+                        help="proxy listens on port")
     return parser.parse_args()
         
 if __name__ == "__main__":
     args = process_args()
     
-    if args.outfile:
-        g_outfile = open(args.outfile, 'a')
-    else:
-        g_outfile = sys.stdout
+    g_outfile = sys.stdout
+
+    client = setup_aerospike(args)
 
     app = tornado.web.Application([
         (r"/web/(.*)", tornado.web.StaticFileHandler, {"path": "./html/"}),
         (r"/query", QueryHandler),
     ])
-    app.listen(args.port)
+    app.listen(args.proxy)
     tornado.ioloop.IOLoop.current().start()
