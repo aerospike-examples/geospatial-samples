@@ -32,7 +32,7 @@ function getLocation() {
 function queryPosition(pos) {
     var region = {
         type: "Circle",
-        coordinates: [[pos.coords.longitude, pos.coords.latitude], 300]
+        coordinates: [[pos.coords.longitude, pos.coords.latitude], 2000]
     };
     console.log(region);
     $.ajax({

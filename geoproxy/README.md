@@ -21,10 +21,6 @@ Normal:
 Testing the Proxy
 ----------------------------------------------------------------
 
-Fetch the web page:
-
-    curl http://localhost:8888/web/index.html
-
 Make a query:
 
     curl \
@@ -32,3 +28,11 @@ Make a query:
         -X POST \
         -d '{"type": "Circle", "coordinates": [[-122.250629, 37.871022], 300]}' \
         http://localhost:8888/query
+
+
+Using the Web Interface
+----------------------------------------------------------------
+
+Navigate to:
+
+    http://localhost:8888/web/around.html
