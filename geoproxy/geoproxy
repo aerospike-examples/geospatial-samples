@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import sys
+import time
+import argparse
+
+import tornado.ioloop
+import tornado.web
+
+g_outfile = None
+g_sleep_msec = None
+g_error_code = None
+
+class MainHandler(tornado.web.RequestHandler):
+    def post(self):
+        g_outfile.write(self.request.body + '\n')
+        if g_sleep_msec:
+            time.sleep(g_sleep_msec / 1000.0)
+        if g_error_code:
+            self.send_error(g_error_code)
+        else:
+            self.write("OK")
+
+def process_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u', '--usage', action="help",
+                        help="show this help message and exit")
+    parser.add_argument("-p", "--port", type=int, dest='port',
+                        default=8888, help="listen on port")
+    parser.add_argument("-o", "--outfile", type=str, dest='outfile',
+                        help="output file")
+    return parser.parse_args()
+        
+if __name__ == "__main__":
+    args = process_args()
+    
+    if args.outfile:
+        g_outfile = open(args.outfile, 'a')
+    else:
+        g_outfile = sys.stdout
+
+    app = tornado.web.Application([(r"/", MainHandler),])
+    app.listen(args.port)
+    tornado.ioloop.IOLoop.current().start()
