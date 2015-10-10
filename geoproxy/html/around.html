@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset=utf-8>
+<meta name="viewport" content="width=620">
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+
+<title>HTML5 Demo: geolocation</title>
+
+<body>
+
+<h1>What\'s around me?</h1>
+
+<p>Click the button to get stuff around you.</p>
+
+<button onclick="getLocation()">Try It</button>
+
+<p id="demo"></p>
+
+<div id="results"></div>
+
+<script>
+var x = document.getElementById("demo");
+
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(queryPosition);
+    } else { 
+        x.innerHTML = "Geolocation is not supported by this browser.";}
+    }
+    
+function queryPosition(pos) {
+    var region = {
+        type: "Circle",
+        coordinates: [[pos.coords.longitude, pos.coords.latitude], 300]
+    };
+    console.log(region);
+    $.ajax({
+        url: "http://localhost:8888/query",
+        type: "POST",
+        data: JSON.stringify(region),
+        dataType: "json",
+        success: function (result) {
+            var fmtResults = "<pre>" + JSON.stringify(result) + "</pre>";
+            document.getElementById("results").innerHTML = fmtResults;
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            alert(xhr.status);
+            alert(thrownError);
+        }
+    });
+}
+
+</script>
+</body>
+</html>
