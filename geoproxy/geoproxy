@@ -21,8 +21,17 @@ class MainHandler(tornado.web.RequestHandler):
         else:
             self.write("OK")
 
+class HelpfulParser(argparse.ArgumentParser):
+    """Prints usage when an error is encountered"""
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % (message,))
+        self.print_help()
+        sys.exit(2)
+    
 def process_args():
-    parser = argparse.ArgumentParser()
+    parser = HelpfulParser(
+        add_help=False,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-u', '--usage', action="help",
                         help="show this help message and exit")
     parser.add_argument("-p", "--port", type=int, dest='port',
