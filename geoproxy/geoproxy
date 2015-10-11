@@ -16,12 +16,14 @@ LOCBIN = "loc"
 
 g_outfile = None
 g_args = None
+g_client = None
 
 class QueryHandler(tornado.web.RequestHandler):
     def post(self):
         global g_args
+        global g_client
         region = self.request.body
-        query = client.query(g_args.nspace, g_args.set)
+        query = g_client.query(g_args.nspace, g_args.set)
         query.where(aerospike.predicates.geo_within(LOCBIN, region))
         query.select(VALBIN)
         records = []
@@ -30,6 +32,18 @@ class QueryHandler(tornado.web.RequestHandler):
             records.append(json.loads(record[VALBIN]))
         query.foreach(handle_record)
         self.write(json.dumps(records))
+
+class GeoPutHandler(tornado.web.RequestHandler):
+    def post(self):
+        global g_args
+        global g_client
+        cmd = json.loads(self.request.body)
+        key = (g_args.nspace, cmd['set'], cmd['key'])
+        loc = aerospike.GeoJSON(cmd['val'])
+        g_client.put(key,
+                     { cmd['bin']: loc },
+                     policy={ 'timeout': 10000, 'retry': 10 })
+        self.write("");
 
 class HelpfulParser(argparse.ArgumentParser):
     """Prints usage when an error is encountered"""
@@ -41,6 +55,7 @@ class HelpfulParser(argparse.ArgumentParser):
 def setup_aerospike():
     """Establish connection to server"""
     global g_args
+    global g_client
     lua_sys_path = os.path.dirname(aerospike.__file__) \
                    + "/../../../aerospike/lua"
     config = {
@@ -48,14 +63,15 @@ def setup_aerospike():
         'lua': { 'user_path': ".",
                  'system_path': lua_sys_path }
     }
-    client = aerospike.client(config)
-    client.connect(g_args.user, g_args.passwd)
-    return client
+    g_client = aerospike.client(config)
+    g_client.connect(g_args.user, g_args.passwd)
+    return g_client
 
-def cleanup_aerospike(client):
+def cleanup_aerospike():
     """Gracefully shutdown the connection to the server"""
     global g_args
-    client.close()
+    global g_client
+    g_client.close()
 
 def process_args():
     parser = HelpfulParser(
@@ -85,11 +101,12 @@ if __name__ == "__main__":
     
     g_outfile = sys.stdout
 
-    client = setup_aerospike()
+    g_client = setup_aerospike()
 
     app = tornado.web.Application([
         (r"/web/(.*)", tornado.web.StaticFileHandler, {"path": "./html/"}),
         (r"/query", QueryHandler),
+        (r"/geoput", GeoPutHandler),
     ])
     app.listen(g_args.proxy)
     tornado.ioloop.IOLoop.current().start()

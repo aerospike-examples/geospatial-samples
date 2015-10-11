@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset=utf-8>
+<meta name="viewport" content="width=620">
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+
+<title>Put a GeoJSON Value</title>
+
+<body>
+
+<h1>Put a GeoJSON Value</h1>
+
+<form>
+<textarea rows="10" cols="80" id="geojson">
+{
+	"set": "foo",
+	"key": "nltq0v3ky",
+	"bin": "loc",
+	"val": {
+		"type": "Point", 
+		"coordinates": [-122.2531587, 37.8697597]
+	}
+}
+</textarea><br>
+  <button onclick="doPut()">Put it</button>
+</form>
+
+<script>
+function doPut() {
+    var geojson = $("#geojson").val();
+    $.ajax({
+        url: "/geoput",
+        type: "POST",
+        data: geojson,
+        dataType: "json",
+        success: function (result) {
+            console.log("success");
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            alert(xhr.status);
+            alert(thrownError);
+        }
+    });
+}
+</script>
+</body>
+</html>
