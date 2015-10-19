@@ -90,7 +90,7 @@ query_cb(const as_val * valp, void * udata)
 	{
 		as_string * sp = as_string_fromval(valp);
 		if (!sp)
-			fatal("query callback returned non-geojson object");
+			fatal("query callback returned unexpected object");
 		valstr = as_string_get(sp);
 	}
 
