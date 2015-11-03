@@ -77,7 +77,7 @@ public class Around {
 		String valbin = "val";
 		
 		String rgnstr =
-			String.format("{ \"type\": \"Circle\", "
+			String.format("{ \"type\": \"AeroCircle\", "
 						  + "\"coordinates\": [[%.8f, %.8f], %f] }",
 						  params.lng, params.lat, params.radius);
 

@@ -33,7 +33,7 @@ Make a query:
     curl \
         -H "Content-Type: application/json" \
         -X POST \
-        -d '{"type": "Circle", "coordinates": [[-122.250629, 37.871022], 300]}' \
+        -d '{"type": "AeroCircle", "coordinates": [[-122.250629, 37.871022], 300]}' \
         http://localhost:8888/query
 
 

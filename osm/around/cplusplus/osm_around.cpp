@@ -114,7 +114,7 @@ query_circle(aerospike * asp, double lat, double lng, double radius)
 {
 	char region[1024];
 	snprintf(region, sizeof(region),
-			 "{ \"type\": \"Circle\", \"coordinates\": [[%0.8f, %0.8f], %f] }",
+			 "{ \"type\": \"AeroCircle\", \"coordinates\": [[%0.8f, %0.8f], %f] }",
 			 lng, lat, radius);
 
 	// fprintf(stderr, "%s\n", region);

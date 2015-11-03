@@ -31,7 +31,7 @@ function getLocation() {
     
 function queryPosition(pos) {
     var region = {
-        type: "Circle",
+        type: "AeroCircle",
         coordinates: [[pos.coords.longitude, pos.coords.latitude], 2000]
     };
     console.log(region);

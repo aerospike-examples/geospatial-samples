@@ -114,7 +114,7 @@ function query_circle(client) {
 	var t0 = now();
 	
 	var region = {
-		type: "Circle",
+		type: "AeroCircle",
 		coordinates: [[lng, lat], argv.radius]
 	}
 
