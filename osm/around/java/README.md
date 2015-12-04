@@ -30,7 +30,7 @@ Execute the program providing latitude and longitude as arguments:
 
 Docker
 ----------------------------------------------------------------
-A Docker file is included that packages up the code and dependencies to run the load, 
+A Docker file is included that packages up the code and dependencies to run Around 
 
 Usage:
 
