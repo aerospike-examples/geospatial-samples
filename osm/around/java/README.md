@@ -27,3 +27,13 @@ Execute the program providing latitude and longitude as arguments:
         target/osm-around-*-jar-with-dependencies.jar \
         com.aerospike.osm.Around \
         -r 300 -a cafe -- 37.421342 -122.098743 
+
+Docker
+----------------------------------------------------------------
+A Docker file is included that packages up the code and dependencies to run the load, 
+
+Usage:
+
+     docker build -t <myuser>/osm-around-java .
+
+     docker run --rm <myuser>/osm-around-java -h localhost -p 3000 -r 300 -a cafe -- 37.421342 -122.098743
