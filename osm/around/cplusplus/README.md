@@ -48,5 +48,5 @@ Usage:
 
      docker build -t <myuser>/osm-around-cplusplus .
 
-     docker run --rm <myuser>/osm-around-cplusplus  -U dbadmin -P mypasswd -h C-9f9ff9f99f.aerospike.io -p 3200 -r 3000 -a cafe -- 37.421342 -122.098743
+     docker run --rm <myuser>/osm-around-cplusplus -h localhost -p 3000 -r 3000 -a cafe -- 37.421342 -122.098743
 

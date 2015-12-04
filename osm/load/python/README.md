@@ -31,10 +31,6 @@ Usage:
 Execute the program, argument is path to osm pbf data file:
 
     ./osm_load san-francisco-bay_california.osm.pbf
-
-An example loading data into a cluster created on the Aerospike Cloud Service
-
-    ./osm_load -U dbadmin -P mypasswd -h <hostname> san-francisco-bay_california.osm.pbf
     
 Docker
 ----------------------------------------------------------------
@@ -44,5 +40,5 @@ Usage:
 
      docker build -t <myuser>/osm-load .
 
-     docker run --rm -v ~/Downloads:/data <myuser>/osm-load -h <hostname> /data/san-francisco-bay_california.osm.pbf 
+     docker run --rm -v ~/Downloads:/data <myuser>/osm-load -h localhost -p 3000 /data/san-francisco-bay_california.osm.pbf 
 
