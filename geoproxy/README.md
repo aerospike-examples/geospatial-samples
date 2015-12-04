@@ -22,7 +22,7 @@ Normal:
 
     ./geoproxy
     
-    ./geoproxy  -h C-83cd437ea7.aerospike.io -p 3200 -U dbadmin -P paranoia -n geo 
+    ./geoproxy  -h localhost -p 3000  -n geo 
 
 
 Testing the Proxy
@@ -43,3 +43,24 @@ Using the Web Interface
 Navigate to:
 
     http://localhost:8888/web/around.html
+
+Docker
+----------------------------------------------------------------
+A Docker file is included that packages up the code and dependencies to run the load, 
+
+Usage:
+
+     docker build -t <myuser>/geoproxy .
+
+     docker run --rm <myuser>/geoproxy  -h localhost -p 3000
+
+In your browser point to
+
+     http://<host addr>/web/around.html     
+
+where <host addr> is the IP address of the Container,
+
+     docker-machine ip <my dokcer host>
+
+
+
