@@ -19,3 +19,13 @@ Execute the program providing latitude and longitude as arguments:
 
     # Just show cafes
     ./osm_around -r 300 -a cafe -- 37.421342 -122.098743
+
+Docker
+----------------------------------------------------------------
+A Docker file is included that packages up the code and dependencies to run Around 
+
+Usage:
+
+     docker build -t <myuser>/osm-around-nodejs .
+
+     docker run --rm <myuser>/osm-around-nodejs -h localhost -p 3000 -r 300 -a cafe -- 37.421342 -122.098743
