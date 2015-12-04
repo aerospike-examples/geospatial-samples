@@ -35,3 +35,15 @@ Usage:
 Execute the program, argument is path to the Yelp Challenge business data file:
 
     OBJS/yelp_load yelp_academic_dataset_business.json
+
+Docker
+----------------------------------------------------------------
+A Docker file is included that packages up the code and dependencies to run the load, 
+
+Usage:
+
+     docker build -t <myuser>/yelp-load-cplusplus .
+
+     docker run --rm -v ~/Downloads:/data <myuser>/yelp-load-cplusplus -h localhost -p 3000 /data/san-francisco-bay_california.osm.pbf 
+
+
