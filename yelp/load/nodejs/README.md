@@ -29,8 +29,8 @@ A Docker file is included that packages up the code and dependencies to run the 
 
 Usage:
 
-     docker build -t <myuser>/yelp-load-nodejs .
+     docker build -t <myuser>/yelp-load:nodejs .
 
-     docker run --rm -v ~/Downloads:/data <myuser>/yelp-load-nodejs -h localhost -p 3000 /data/yelp_academic_dataset_business.json 
+     docker run --rm -v ~/Downloads:/data <myuser>/yelp-load:nodejs -h localhost -p 3000 /data/yelp_academic_dataset_business.json 
 
 

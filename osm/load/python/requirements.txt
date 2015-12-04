@@ -1,2 +1,2 @@
 imposm.parser
-aerospike>=1.0.54
+aerospike>=1.0.56

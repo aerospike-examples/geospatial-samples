@@ -34,6 +34,6 @@ A Docker file is included that packages up the code and dependencies to run the 
 
 Usage:
 
-     docker build -t <myuser>/yelp-around-java .
+     docker build -t <myuser>/yelp-around:java .
 
-     docker run --rm <myuser>/yelp-around-java -h localhost -p 3000 -r 300 -c Bars -- 40.4484 -80.0024
+     docker run --rm <myuser>/yelp-around:java -h localhost -p 3000 -r 300 -c Bars -- 40.4484 -80.0024

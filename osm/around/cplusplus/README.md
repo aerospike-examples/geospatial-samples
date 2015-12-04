@@ -46,7 +46,7 @@ A Docker file is included that packages up the code and dependencies to run the 
 
 Usage:
 
-     docker build -t <myuser>/osm-around-cplusplus .
+     docker build -t <myuser>/osm-around:cplusplus .
 
-     docker run --rm <myuser>/osm-around-cplusplus -h localhost -p 3000 -r 3000 -a cafe -- 37.421342 -122.098743
+     docker run --rm <myuser>/osm-around:cplusplus -h localhost -p 3000 -r 3000 -a cafe -- 37.421342 -122.098743
 

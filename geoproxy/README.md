@@ -4,7 +4,7 @@ Prerequisites
 
     sudo pip install tornado
     // make sure you have gcc, (YUM) openssl-devel or (APT) libssl-dev
-    sudo pip install aerospike
+    sudo pip install aerospike>=1.0.56
 
 
 Running the Proxy
@@ -52,7 +52,7 @@ Usage:
 
      docker build -t <myuser>/geoproxy .
 
-     docker run --rm <myuser>/geoproxy  -h localhost -p 3000
+     docker run --rm -p 8888:8888 <myuser>/geoproxy  -h localhost -p 3000
 
 In your browser point to
 
@@ -60,7 +60,7 @@ In your browser point to
 
 where <host addr> is the IP address of the Container,
 
-     docker-machine ip <my dokcer host>
+     docker-machine ip <my docker host>
 
 
 

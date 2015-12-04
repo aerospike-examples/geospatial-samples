@@ -44,8 +44,8 @@ A Docker file is included that packages up the code and dependencies to run the 
 
 Usage:
 
-     docker build -t <myuser>/osm-load-cplusplus .
+     docker build -t <myuser>/osm-load:cplusplus .
 
-     docker run --rm -v ~/Downloads:/data <myuser>/osm-load-cplusplus -h localhost -p 3000 /data/san-francisco-bay_california.osm.pbf 
+     docker run --rm -v ~/Downloads:/data <myuser>/osm-load:cplusplus -h localhost -p 3000 /data/san-francisco-bay_california.osm.pbf 
 
 

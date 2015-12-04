@@ -4,7 +4,7 @@ Prerequisites
 
 Install Aerospike using pip:
 
-    sudo pip install aerospike>=1.0.54
+    sudo pip install aerospike>=1.0.56
 
 Install imposm on RedHat:
 
@@ -38,7 +38,7 @@ A Docker file is included that packages up the code and dependencies to run the 
 
 Usage:
 
-     docker build -t <myuser>/osm-load-python .
+     docker build -t <myuser>/osm-load:python .
 
-     docker run --rm -v ~/Downloads:/data <myuser>/osm-load-python -h localhost -p 3000 /data/san-francisco-bay_california.osm.pbf 
+     docker run --rm -v ~/Downloads:/data <myuser>/osm-load:python -h localhost -p 3000 /data/san-francisco-bay_california.osm.pbf 
 

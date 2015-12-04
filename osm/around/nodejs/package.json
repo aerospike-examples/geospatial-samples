@@ -16,7 +16,7 @@
     "x64"
   ],
   "dependencies": {
-    "aerospike": "1.0.52",
+    "aerospike": ">=1.0.53",
     "yargs": "3.21.1"
   }
 }

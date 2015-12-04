@@ -4,7 +4,7 @@ Prerequisites
 
 Install Aerospike using pip:
 
-    sudo pip install aerospike>=1.0.54
+    sudo pip install aerospike>=1.0.56
 
 Running
 ----------------------------------------------------------------
@@ -30,8 +30,8 @@ A Docker file is included that packages up the code and dependencies to run the 
 
 Usage:
 
-     docker build -t <myuser>/osm-around .
+     docker build -t <myuser>/osm-around:python .
 
-     docker run --rm <myuser>/osm-around -h localhost -p 3000 -r 300 -a cafe 37.421342 -122.098743
+     docker run --rm <myuser>/osm-around:python -h localhost -p 3000 -r 300 -a cafe 37.421342 -122.098743
 
 

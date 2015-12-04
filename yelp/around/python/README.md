@@ -4,7 +4,7 @@ Prerequisites
 
 Install Aerospike using pip:
 
-    sudo pip install aerospike
+    sudo pip install aerospike>=1.0.56
 
 
 Running
@@ -28,6 +28,6 @@ A Docker file is included that packages up the code and dependencies to run the 
 
 Usage:
 
-     docker build -t <myuser>/yelp-around-python .
+     docker build -t <myuser>/yelp-around:python .
 
-     docker run --rm <myuser>/yelp-around-python -h localhost -p 3000 -r 300 -c Bars -- 40.4484 -80.0024
+     docker run --rm <myuser>/yelp-around:python -h localhost -p 3000 -r 300 -c Bars -- 40.4484 -80.0024
