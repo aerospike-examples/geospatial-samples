@@ -4,7 +4,7 @@ Prerequisites
 
 Install Aerospike using pip:
 
-    sudo pip install aerospike
+    sudo pip install aerospike>=1.0.54
 
 Running
 ----------------------------------------------------------------
