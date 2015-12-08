@@ -6,6 +6,8 @@ Install the Aerospike C Client from the download page:
 
     http://www.aerospike.com/download/client/c/3.1.24/
 
+Make sure the C Client library is in your search path.
+
 You need the readosm library:
 
     https://www.gaia-gis.it/fossil/readosm/index
