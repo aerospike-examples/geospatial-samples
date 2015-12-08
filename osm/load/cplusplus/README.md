@@ -19,6 +19,7 @@ On MacOS:
 
     brew install readosm
     brew install jansson
+    export CPATH=/usr/local/include
 
 
 Building
