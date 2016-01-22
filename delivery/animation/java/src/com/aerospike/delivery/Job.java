@@ -15,6 +15,8 @@ public class Job extends Movable implements Comparable<Job> {
   private final Jobs jobs;
   public Jobs.Metadata metadata;
   private int droneId;
+  public static int NullID = 0;
+  public static int FirstID = 1;
   public final int id;
   public Location origin;
   public Location destination;
@@ -32,8 +34,8 @@ public class Job extends Movable implements Comparable<Job> {
     state = State.Init;
     origin = getLocation();
     destination = Location.makeRandom();
-    lock = new ReentrantReadWriteLock(true);
     jobs.initMetadata(this);
+    lock = new ReentrantReadWriteLock(true);
   }
 
   public Job(Jobs jobs, Jobs.Metadata metadata, int id, State state,

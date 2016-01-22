@@ -92,6 +92,16 @@ public class InMemoryJobs extends Jobs {
     foreach(Job.State.OnHold,    action);
   }
 
+  @Override
+  public void refreshRenderCache() {
+    // Do nothing because we don't need a separate render cache.
+  }
+
+  @Override
+  public void foreachInRenderCache(Predicate<? super Job> action) {
+
+  }
+
 
   public void promoteAJobFromOnHold() {
     foreach(Job.State.OnHold, job -> {

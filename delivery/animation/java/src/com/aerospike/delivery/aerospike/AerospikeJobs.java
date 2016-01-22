@@ -19,7 +19,7 @@ public class AerospikeJobs extends Jobs {
 
   private final AerospikeDatabase database;
   final String setName;
-  private ConcurrentHashMap<Key, Job> cache;
+  private ConcurrentHashMap<Key, Job> renderCache;
   private final Set<Job> jobsOnHoldCache;
 
   // One of these is attached to every job.
@@ -30,14 +30,11 @@ public class AerospikeJobs extends Jobs {
 
   //-----------------------------------------------------------------------------------
 
-  public AerospikeJobs(AerospikeDatabase database, boolean useCaching) {
+  public AerospikeJobs(AerospikeDatabase database) {
     this.database = database;
     setName = "jobs";
-    if (useCaching) {
-      cache = new ConcurrentHashMap<>();
-    }
+    renderCache = new ConcurrentHashMap<>();
     jobsOnHoldCache = ConcurrentHashMap.newKeySet();
-    new Thread(new Metering()).start();
   }
 
   //-----------------------------------------------------------------------------------
@@ -70,6 +67,7 @@ public class AerospikeJobs extends Jobs {
   public void clear() {
     super.clear();
     database.clearSet("jobs");
+    renderCache.clear();
   }
 
   //-----------------------------------------------------------------------------------
@@ -166,26 +164,20 @@ public class AerospikeJobs extends Jobs {
 
   @Override
   public void foreach(Predicate<? super Job> action) {
-    if (cache != null) {
-      for (Job job : cache.values()) {
-        if (!action.test(job)) {
-          break;
-        }
-      }
-    } else {
-      ScanPolicy scanPolicy = new ScanPolicy();
-      try {
-        /*
-         * Scan the entire Set using scannAll(). This will scan each node
-         * in the cluster and return the record Digest to the call back object
-         */
-        ++Metering.jobScans;
+    ScanPolicy scanPolicy = new ScanPolicy();
+    try {
+      /*
+       * Scan the entire Set using scannAll(). This will scan each node
+       * in the cluster and return the record Digest to the call back object
+       */
+      ++Metering.jobScans;
+      if (database.client.isConnected()) {
         database.client.scanAll(scanPolicy, database.namespace, setName, new ForeachScanCallback(action));
-      } catch (AerospikeException e) {
-        int resultCode = e.getResultCode();
-        database.log.info(ResultCode.getResultString(resultCode));
-        database.log.debug("Error details: ", e);
       }
+    } catch (AerospikeException e) {
+      int resultCode = e.getResultCode();
+      database.log.info(ResultCode.getResultString(resultCode));
+      database.log.debug("Error details: ", e);
     }
   }
 
@@ -205,6 +197,48 @@ public class AerospikeJobs extends Jobs {
       // We ignore that because scanAll can't deal with it.
       // ScanCallback could provide a cancel() method, maybe someday.
       action.test(job);
+    }
+  }
+
+  //----------------------------------------------------------------------------------------
+
+  @Override
+  public void refreshRenderCache() {
+    ScanPolicy scanPolicy = new ScanPolicy();
+    try {
+      /*
+       * Scan the entire Set using scannAll(). This will scan each node
+       * in the cluster and return the record Digest to the call back object
+       */
+      ++Metering.jobScans;
+      if (database.client.isConnected()) {
+        database.client.scanAll(scanPolicy, database.namespace, setName, new RefreshRenderCacheScanCallback());
+      }
+    } catch (AerospikeException e) {
+      int resultCode = e.getResultCode();
+      database.log.info(ResultCode.getResultString(resultCode));
+      database.log.debug("Error details: ", e);
+    }
+  }
+
+
+  class RefreshRenderCacheScanCallback implements ScanCallback {
+
+    public void scanCallback(Key key, Record record) throws AerospikeException {
+      // todo Should we get them in batches?
+      ++Metering.jobScanResults;
+      Job job = get(key, record);
+      renderCache.put(key, job);
+    }
+  }
+
+
+  @Override
+  public void foreachInRenderCache(Predicate<? super Job> action) {
+    for (Job job : renderCache.values()) {
+      if (!action.test(job)) {
+        break;
+      }
     }
   }
 
@@ -242,7 +276,7 @@ public class AerospikeJobs extends Jobs {
       modifyCount(from, -1);
       modifyCount(to, +1);
       if (to == Job.State.OnHold) {
-        // hold it in our cache
+        // hold it in our renderCache
         jobsOnHoldCache.add(job);
       }
     }
@@ -254,9 +288,6 @@ public class AerospikeJobs extends Jobs {
   public boolean put(Job job) {
     Database.assertWriteLocked(job.lock);
     Key key = new Key(database.namespace, setName, job.id);
-    if (cache != null) {
-      cache.put(key, job);
-    }
     String originBinName = job.state.name(); // location is stored in a bin by this name
     Bin idBin          = new Bin("id",        job.id);
     Bin stateBin       = new Bin("state",     originBinName);
@@ -298,6 +329,7 @@ public class AerospikeJobs extends Jobs {
 
   //-----------------------------------------------------------------------------------
 
+  // Used only in main methods for debugging.
   public Job getJobWhereIdIs(int id) {
     Key key = new Key(database.namespace, setName, id);
     Policy readPolicy = new Policy();
@@ -309,34 +341,26 @@ public class AerospikeJobs extends Jobs {
   //-----------------------------------------------------------------------------------
 
   private Job get(Key key, Record record) {
-    Job job;
-    if (cache != null) {
-      job = cache.get(key);
-      if (job == null) {
-        throw new Error("job is not in cache");
-      }
-    } else {
-      Job.State state = Job.State.stateForName(record.getValue("state"));
-      String locationBinName = state.name(); // location is stored in a bin by this name
-      AerospikeJobs.Metadata metadata = new Metadata();
-      metadata.generation = record.generation;
-      int id = record.getInt("id");
-      Location origin      = Location.makeFromGeoJSONPointDouble(record.getGeoJSON(locationBinName));
-      Location destination = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("destination"));
-      Location location    = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("location"));
-      int droneId = record.getInt("droneId");
-      boolean isCandidate = record.getBoolean("candidate");
-      job = new Job(AerospikeJobs.this,
-          metadata,
-          id,
-          state,
-          origin,
-          destination,
-          location,
-          droneId,
-          isCandidate
-      );
-    }
+    Job.State state = Job.State.stateForName(record.getValue("state"));
+    String locationBinName = state.name(); // location is stored in a bin by this name
+    Metadata metadata = new Metadata();
+    metadata.generation = record.generation;
+    int id = record.getInt("id");
+    Location origin      = Location.makeFromGeoJSONPointDouble(record.getGeoJSON(locationBinName));
+    Location destination = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("destination"));
+    Location location    = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("location"));
+    int droneId = record.getInt("droneId");
+    boolean isCandidate = record.getBoolean("candidate");
+    Job job = new Job(AerospikeJobs.this,
+        metadata,
+        id,
+        state,
+        origin,
+        destination,
+        location,
+        droneId,
+        isCandidate
+    );
 //    System.out.printf("get %s\n", job);
     return job;
   }

@@ -11,19 +11,18 @@ import java.util.function.Predicate;
 public class Drone extends Movable implements Runnable, Comparable<Drone> {
 
   private final Drones drones; // Where drones are stored
+  public static int NullID  = 0;
+  public static int FirstID = 1;
   public final int id;
 
   List<State> debugStates = new ArrayList<>(10);
   volatile boolean isActive;
   private boolean willGoOffDuty = false;
   private int nbTrips;
-  public boolean isExample;
-  private final List<Job> candidates;
+  private List<Job> candidates;
 
   static final TimeUnit timeUnit = TimeUnit.MILLISECONDS;
   static long animationIntervalMs = 20;
-
-
 
   //
   private long circleDelay()        { return slowdownFactor( 5); }
@@ -45,11 +44,17 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   private boolean isSearchContinuing = false;
   private int nbSearchTries;
 
-  // used by Renderer
+  public Job job;
+
+  //--- used by Renderer ----------------------------------
+  public volatile State state;
+  // location from super
+  public int jobId;
+  //--- used by Renderer if drawing circle and path -------
   public Location startLocation; // Where we were when we got a job
   public double currentRadius; // for display
-  public volatile State state;
-  public Job job;
+  public boolean isExample;
+
   Location waypoint; // where we'll be after a delay
   private double radiusEnlargementFactor = 2;
 
@@ -57,17 +62,16 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   ScheduledFuture<?> future;
 
 
+  //-----------------------------------------------------------------------------------
 
-  public Drone(AerospikeDrones drones, int id, State state, Location location, double radius, Location start, Job job) {
-    super(); // sets location ot random, but we overwrite that.
-    this.drones = drones;
+  // A drone object made this way is usable only by the Renderer.
+  public Drone(AerospikeDrones aerospikeDrones, int id, State state, Location location, int jobId, boolean isExample) {
+    drones = aerospikeDrones;
     this.id = id;
     this.state = state;
     super.setLocation(location);
-    currentRadius = radius;
-    startLocation = start;
-    this.job = job;
-    candidates = new ArrayList<>();
+    this.jobId = jobId;
+    this.isExample = isExample;
   }
 
   public Drone(Drones drones) {
@@ -89,7 +93,14 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
     Delivering,
     Delivered,
     Done,
-    OffDuty
+    OffDuty;
+
+    public static State stateForName(Object name) {
+      for (State state : State.values()) {
+        if (state.name().equals(name)) return state;
+      }
+      return null;
+    }
   }
 
 
@@ -99,18 +110,22 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
 
 
   public boolean setState(Drone.State newValue) {
-    boolean result = drones.changeState(this, newValue);
-    if (result) state = newValue;
-    return result;
+    return drones.changeState(this, state, newValue);
   }
 
+  @Override
+  public void setLocation(Location newValue) {
+    super.setLocation(newValue);
+    put();
+  }
 
-  public boolean changeState(State from, State to) {
-    boolean result = drones.changeState(this, from, to);
-    if (result) {
-      state = to;
-    }
-    return result;
+  public void setExample(boolean example) {
+    this.isExample = example;
+    put();
+  }
+
+  public boolean put() {
+    return drones.put(this);
   }
 
   private long slowdownFactor(int delay) {
@@ -122,7 +137,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   }
 
   public boolean hasJob() {
-    return job != null;
+    return jobId != NullID;
   }
 
   public Job getJob() {
@@ -131,6 +146,12 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
 
   public void setJob(Job newValue) {
     job = newValue;
+    if (newValue != null) {
+      jobId = job.id;
+    } else {
+      jobId = Job.NullID;
+    }
+    put();
   }
 
   @Override
@@ -196,7 +217,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
             setState(State.Done);
             continue;
           case Done:
-            if (willGoOffDuty && (isExample || id == Drones.FirstID)) {
+            if (willGoOffDuty && (isExample || id == FirstID)) {
               App.isLeadDroneStillRunning = false;
             }
             if (willGoOffDuty && !App.isLeadDroneStillRunning) {
@@ -327,7 +348,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   }
 
   private boolean stillLookingForJob() {
-    job = findNearbyJob();
+    setJob(findNearbyJob());
     return job == null;
   }
 

@@ -51,6 +51,7 @@ public class InMemoryDrones extends Drones {
   @Override
   public boolean changeState(Drone drone, Drone.State from, Drone.State to) {
     if (to == Drone.State.Init) {
+      drone.state = to;
       return true;
     }
     if (from == to) {
@@ -60,7 +61,19 @@ public class InMemoryDrones extends Drones {
     if (drone.getState() != from) {
       return false;
     }
+    drone.state = to;
     return true;
+  }
+
+
+  @Override
+  public void refreshRenderCache() {
+    // Do nothing because we don't need a separate render cache.
+  }
+
+  @Override
+  public void foreachInRenderCache(Predicate<? super Drone> action) {
+    foreach(action);
   }
 
 

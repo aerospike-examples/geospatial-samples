@@ -51,7 +51,8 @@ public class App {
   static DebuggingCountDownLatch activeDrones;
   static List<Drone> exampleDrones = new ArrayList<>();
 
-  public static final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors()); // todo set corePoolSize
+  private static int ncores = Runtime.getRuntime().availableProcessors();
+  public static final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(ncores);
   static {
     executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
     executor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
@@ -90,6 +91,8 @@ public class App {
 
     start();
   }
+
+  //-----------------------------------------------------------------------------------
 
   public static boolean doCommandLineOptions(String[] args) {
 
@@ -259,6 +262,8 @@ public class App {
     return new Parameters(host, port, user, password, namespace, set);
   }
 
+  //-----------------------------------------------------------------------------------
+
   public static void start() throws InterruptedException {
     switch (mode) {
       case Clear:
@@ -303,6 +308,7 @@ public class App {
     return;
   }
 
+  //-----------------------------------------------------------------------------------
 
   private static void doTheAnimation() throws InterruptedException {
     database.getJobs().addMore(backlogExcess(1));
@@ -310,8 +316,10 @@ public class App {
     int pauseMs = 2000;
     int durationNs = 20_000_000;
 
+    boolean isDrawingCirclesAndLines = databaseToUse == DatabaseToUse.Aerospike ? false : true;
+
     if (isShowingTutorial) {
-      activateAndWait(1, 1, nbTrips, durationNs, true);
+      activateAndWait(1, 1, nbTrips, durationNs, isDrawingCirclesAndLines);
       if (isRunningBenchmark) {
         delayMs(pauseMs * 2);
       }
@@ -321,12 +329,13 @@ public class App {
       slowdownFactor = benchmarkSlowdownFactor;
       isDrawingJobNumbers = false;
       for (int i = 0 ; i < 99 ; ++i) {
-        activateAndWait(nbBenchmarkDrones, 1, 6, durationNs, true);
+        activateAndWait(nbBenchmarkDrones, 1, nbTrips, durationNs, isDrawingCirclesAndLines);
         delayMs(pauseMs);
       }
     }
   }
 
+  //-----------------------------------------------------------------------------------
 
   // Activate all drones, including possibly n-pew ones,
   // and wait for them all to go off duty.
@@ -346,7 +355,7 @@ public class App {
 
     // There's only one, so no need for speed here.
     for (Drone drone : exampleDrones) {
-      drone.isExample = false;
+      drone.setExample(false);
     }
     exampleDrones.clear();
     App.isDrawingCirclesAndLines = false;
@@ -391,7 +400,7 @@ public class App {
     }
     database.getDrones().foreach(drone -> {
       if (drone.id <= nbExamples) {
-        drone.isExample = true;
+        drone.setExample(true);
         exampleDrones.add(drone);
         return true;
       } else {

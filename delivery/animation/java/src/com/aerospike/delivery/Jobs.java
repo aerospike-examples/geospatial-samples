@@ -5,7 +5,6 @@ import java.util.function.Predicate;
 
 public abstract class Jobs {
 
-  public static int FirstID = 1;
   int nextID;
   private int size;
 
@@ -13,7 +12,7 @@ public abstract class Jobs {
 
 
   public Jobs() {
-    nextID = FirstID;
+    nextID = Job.FirstID;
     size = 0;
   }
 
@@ -33,7 +32,7 @@ public abstract class Jobs {
   public abstract Job newJob(Job.State state);
 
   public void clear() {
-    nextID = FirstID;
+    nextID = Job.FirstID;
     size = 0;
   }
 
@@ -54,6 +53,10 @@ public abstract class Jobs {
   public abstract void foreach(Job.State state, Predicate<? super Job> action);
 
   public abstract void foreach(                 Predicate<? super Job> action);
+
+  public abstract void refreshRenderCache();
+
+  public abstract void foreachInRenderCache(Predicate<? super Job> action);
 
   public abstract void promoteAJobFromOnHold();
 

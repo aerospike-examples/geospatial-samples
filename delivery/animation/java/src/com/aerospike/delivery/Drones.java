@@ -5,13 +5,12 @@ import java.util.function.Predicate;
 
 public abstract class Drones {
 
-  public static int FirstID = 1;
-  int nextID = FirstID;
+  int nextID;
   private int size;
 
   public Drones() {
     super();
-    nextID = FirstID;
+    nextID = Drone.FirstID;
     size = 0;
   }
 
@@ -24,11 +23,6 @@ public abstract class Drones {
 
   public abstract void add(Drone drone);
 
-  public final boolean changeState(Drone drone, Drone.State newState) {
-    return changeState(drone, drone.getState(), newState);
-  }
-
-
   public final int size() {
     return size;
   }
@@ -38,7 +32,7 @@ public abstract class Drones {
 
 
   public void clear() {
-    nextID = FirstID;
+    nextID = Drone.FirstID;
     size = 0;
   }
 
@@ -47,6 +41,10 @@ public abstract class Drones {
   public abstract boolean changeState(Drone drone, Drone.State from, Drone.State to);
 
   public abstract void foreach(Predicate<? super Drone> action);
+
+  public abstract void refreshRenderCache();
+
+  public abstract void foreachInRenderCache(Predicate<? super Drone> action);
 
   public abstract boolean put(Drone drone);
 

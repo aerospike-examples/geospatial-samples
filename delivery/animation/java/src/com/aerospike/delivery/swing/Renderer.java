@@ -52,9 +52,27 @@ public class Renderer {
 
 
   public void start() {
-    Thread thread = new Thread(new DrawingTask());
-    thread.setName("Renderer");
-    thread.start();
+    {
+      Thread drawThread = new Thread(new DrawingTask());
+      drawThread.setName("Renderer");
+      drawThread.start();
+    }
+
+    // todo this is not the way to do this.
+    // The render loop should start these then wait for a Future from each.
+    // As soon as it gets from the future, it should submit another.
+    {
+      Thread droneScanThread = new Thread(new DroneScanningTask());
+      droneScanThread.setName("Drone scanning");
+      droneScanThread.start();
+    }
+
+    {
+      Thread jobScanThread = new Thread(new JobScanningTask());
+      jobScanThread.setName("Job scanning");
+      jobScanThread.start();
+    }
+
   }
 
 
@@ -62,6 +80,87 @@ public class Renderer {
     isStopping = true;
   }
 
+
+  // todo desperately needs refactoring
+  class JobScanningTask implements Runnable {
+
+    /**
+     * Runs until stopped.
+     */
+    @Override
+    public void run() {
+      long previousFrameState = System.nanoTime();
+      for (int count = 0 ; !isStopping ; ++count) {
+        try {
+          jobs.refreshRenderCache();
+
+          long currentTime = System.nanoTime();
+          long timeTaken = currentTime - previousFrameState;
+          previousFrameState = currentTime;
+          long delayArg = idealFramePeriod - timeTaken;
+          if (delayArg > 0) {
+//            System.out.format("rendering rate %dfps, used %3.0f%% of the period\n", maxFramesPerSecond, 100. * timeTaken / idealFramePeriod);
+            delayNs(delayArg);
+          } else {
+            if (false) {
+              // This is needs work but seems hopeless.
+              // Better to pick a value for fractionShown and stick with it.
+              double seconds = timeTaken / 1_000_000_000.;
+              double rate = 1 / seconds;
+              System.out.format("rendering rate %.1ffps\n", rate);
+              // run at an ad-hoc lower frame rate, no delay.
+              int higherValue = 4 * fractionShown / 3;
+              fractionShown = Math.max(higherValue, fractionShown + 1);
+            }
+          }
+        } catch (Exception ex) {
+          ex.printStackTrace();
+          isStopping = true;
+        }
+      }
+    }
+
+  }
+
+  class DroneScanningTask implements Runnable {
+
+    /**
+     * Runs until stopped.
+     */
+    @Override
+    public void run() {
+      long previousFrameState = System.nanoTime();
+      for (int count = 0 ; !isStopping ; ++count) {
+        try {
+          drones.refreshRenderCache();
+
+          long currentTime = System.nanoTime();
+          long timeTaken = currentTime - previousFrameState;
+          previousFrameState = currentTime;
+          long delayArg = idealFramePeriod - timeTaken;
+          if (delayArg > 0) {
+//            System.out.format("rendering rate %dfps, used %3.0f%% of the period\n", maxFramesPerSecond, 100. * timeTaken / idealFramePeriod);
+            delayNs(delayArg);
+          } else {
+            if (false) {
+              // This is needs work but seems hopeless.
+              // Better to pick a value for fractionShown and stick with it.
+              double seconds = timeTaken / 1_000_000_000.;
+              double rate = 1 / seconds;
+              System.out.format("rendering rate %.1ffps\n", rate);
+              // run at an ad-hoc lower frame rate, no delay.
+              int higherValue = 4 * fractionShown / 3;
+              fractionShown = Math.max(higherValue, fractionShown + 1);
+            }
+          }
+        } catch (Exception ex) {
+          ex.printStackTrace();
+          isStopping = true;
+        }
+      }
+    }
+
+  }
 
   class DrawingTask implements Runnable {
 
@@ -231,7 +330,7 @@ public class Renderer {
           default:
             throw new Error("unhandled drone state");
           case Init:
-            throw new Error("Init can't have a job");
+//            throw new Error("Init can't have a job");
           case GotAJob:
           case Departing:
           case EnRoute:
@@ -303,7 +402,7 @@ public class Renderer {
   //==================================================================================================================
 
   public void drawJobs(Graphics2D g) {
-    jobs.foreach(job -> {
+    jobs.foreachInRenderCache(job -> {
       if ((job.id - 1) % fractionShown != 0) {
         return true;
       }
@@ -356,7 +455,7 @@ public class Renderer {
 
 
   private void drawDrones(Graphics2D g) {
-    drones.foreach(drone -> {
+    drones.foreachInRenderCache(drone -> {
       if ((drone.id - 1) % fractionShown != 0) {
         return true;
       }
@@ -366,7 +465,7 @@ public class Renderer {
           default:
             throw new Error("unhandled drone state");
           case Init:
-            throw new Error("Init can't have a job");
+//            throw new Error("Init can't have a job");
           case Ready:
           case GotAJob:
           case Departing:

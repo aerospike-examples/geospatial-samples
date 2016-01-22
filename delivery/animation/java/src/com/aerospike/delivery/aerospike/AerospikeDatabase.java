@@ -4,11 +4,7 @@ package com.aerospike.delivery.aerospike;
 import com.aerospike.client.*;
 import com.aerospike.client.policy.ClientPolicy;
 import com.aerospike.client.policy.ScanPolicy;
-import com.aerospike.delivery.App;
-import com.aerospike.delivery.Database;
-import com.aerospike.delivery.Job;
-import com.aerospike.delivery.Parameters;
-import com.aerospike.delivery.inmemory.InMemoryDrones;
+import com.aerospike.delivery.*;
 import org.apache.log4j.Logger;
 
 public class AerospikeDatabase extends Database {
@@ -29,10 +25,10 @@ public class AerospikeDatabase extends Database {
     clientPolicy.password = parameters.password;
     clientPolicy.failIfNotConnected = true;
 
-    drones = new InMemoryDrones();  // todo Drones are in not in the Aerospike database yet.
+    drones = new AerospikeDrones(this);
+    jobs    = new AerospikeJobs(this);
 
-    jobs    = new AerospikeJobs(this, useCaching);
-
+    new Thread(new Metering()).start();
     log = Logger.getLogger(AerospikeDatabase.class);
   }
 

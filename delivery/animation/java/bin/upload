@@ -1,0 +1,7 @@
+#!/bin/bash
+
+function rsyncec2 {
+  echo "[ rsync --rsh=\"ssh -l ec2-user -i /Users/yost/.ssh/geo-demo.pem\" $@ ]"
+          rsync  --rsh="ssh -l ec2-user -i /Users/yost/.ssh/geo-demo.pem" $@
+}
+mvn package && rsyncec2 -av target/delivery-1.0.0-jar-with-dependencies.jar aerospike-app-server:
