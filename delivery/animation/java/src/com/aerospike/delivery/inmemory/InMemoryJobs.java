@@ -99,7 +99,7 @@ public class InMemoryJobs extends Jobs {
 
   @Override
   public void foreachInRenderCache(Predicate<? super Job> action) {
-
+    foreach(action);
   }
 
 

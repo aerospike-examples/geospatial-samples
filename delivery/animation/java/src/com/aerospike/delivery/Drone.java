@@ -40,7 +40,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   private double totalDistance;
 
   // findNearbyJob()
-  private static final double startingRadius = .05;
+  static double startingRadius = .05;
   private boolean isSearchContinuing = false;
   private int nbSearchTries;
 

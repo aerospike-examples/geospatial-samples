@@ -116,6 +116,7 @@ public class App {
       options.addOption(null, "fixed-seed", false, "Use fixed random seed.");
       options.addOption(null, "trips",      true,  "Number of trips (default " + nbTrips + ")");
       options.addOption(null, "speed",      true,  "Animation speed (default 1.0)");
+      options.addOption(null, "radius",     true,  "Starting radius (default " + Drone.startingRadius + ")");
       options.addOption(null, "clear",      false, "Clear the database.");
 //      options.addOption(null, "other", false, "Run an ad hoc test in the code");
 //      options.addOption(null, "nocache",    false, "Run aerospike without using a HashMap cache.");
@@ -210,6 +211,11 @@ public class App {
       if (cl.hasOption("speed")) {
         String str = cl.getOptionValue("speed");
         animationSpeed = Double.parseDouble(str);
+      }
+
+      if (cl.hasOption("radius")) {
+        String str = cl.getOptionValue("radius");
+        Drone.startingRadius = Double.parseDouble(str);
       }
 
     } catch (Exception ex) {
