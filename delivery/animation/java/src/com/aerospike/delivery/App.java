@@ -60,6 +60,7 @@ public class App {
   static volatile boolean isLeadDroneStillRunning;
 
   public enum Mode {
+    Clear,
     Full,     // app server and observing
     Observe,  // only observe the database
     Headless, // app server only
@@ -110,9 +111,10 @@ public class App {
       options.addOption(null, "benchmark",  false, "No delays, 500 drones");
       options.addOption(null, "drones",     true,  "Number of benchmark drones (default " + nbBenchmarkDrones + ")");
       options.addOption(null, "fixed-seed", false, "Use fixed random seed.");
-      options.addOption(null, "trips", true, "Number of trips (default " + nbTrips + ")");
-      options.addOption(null, "speed", true, "Animation speed (default 1.0)");
-      options.addOption(null, "other", false, "Run an ad hoc test in the code");
+      options.addOption(null, "trips",      true,  "Number of trips (default " + nbTrips + ")");
+      options.addOption(null, "speed",      true,  "Animation speed (default 1.0)");
+      options.addOption(null, "clear",      false, "Clear the database.");
+//      options.addOption(null, "other", false, "Run an ad hoc test in the code");
 //      options.addOption(null, "nocache",    false, "Run aerospike without using a HashMap cache.");
 
       // todo doesn't complain if it sees things other than the flags above
@@ -152,7 +154,10 @@ public class App {
         logUsage(options);
         return false;
       }
-      if (cl.hasOption("headless")) {
+      if (cl.hasOption("clear")) {
+        databaseToUse = DatabaseToUse.Aerospike;
+        mode = Mode.Clear;
+      } else if (cl.hasOption("headless")) {
         databaseToUse = DatabaseToUse.Aerospike;
         mode = Mode.Headless;
       } else if (cl.hasOption("observe")) {
@@ -256,6 +261,9 @@ public class App {
 
   public static void start() throws InterruptedException {
     switch (mode) {
+      case Clear:
+        database.clear();
+        break;
       case Full:
         System.out.println("Running animation.");
         database.clear();
@@ -271,7 +279,9 @@ public class App {
     }
 
     try {
-      if (mode == Mode.Observe) {
+      if (mode == Mode.Clear) {
+        System.out.println("Clearing the Aerospike database.");
+      } else if (mode == Mode.Observe) {
         System.out.println("Running in observe mode.");
         Thread.sleep(999999999);
       } else {

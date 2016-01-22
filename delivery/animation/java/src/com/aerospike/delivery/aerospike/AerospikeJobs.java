@@ -28,6 +28,8 @@ public class AerospikeJobs extends Jobs {
     Job.State previousState = Job.State.Init;
   }
 
+  //-----------------------------------------------------------------------------------
+
   public AerospikeJobs(AerospikeDatabase database, boolean useCaching) {
     this.database = database;
     setName = "jobs";
@@ -38,12 +40,15 @@ public class AerospikeJobs extends Jobs {
     new Thread(new Metering()).start();
   }
 
+  //-----------------------------------------------------------------------------------
 
   @Override
   public void initMetadata(Job job) {
     job.metadata = new AerospikeJobs.Metadata();
   }
 
+
+  //-----------------------------------------------------------------------------------
 
   @Override
   public Job newJob(Job.State state) {
@@ -59,6 +64,7 @@ public class AerospikeJobs extends Jobs {
     return job;
   }
 
+  //-----------------------------------------------------------------------------------
 
   @Override
   public void clear() {
@@ -66,6 +72,7 @@ public class AerospikeJobs extends Jobs {
     database.clearSet("jobs");
   }
 
+  //-----------------------------------------------------------------------------------
 
   @Override
   public int size(Job.State state) {
@@ -155,6 +162,8 @@ public class AerospikeJobs extends Jobs {
     }
   }
 
+  //----------------------------------------------------------------------------------------
+
   @Override
   public void foreach(Predicate<? super Job> action) {
     if (cache != null) {
@@ -199,6 +208,7 @@ public class AerospikeJobs extends Jobs {
     }
   }
 
+  //----------------------------------------------------------------------------------------
 
   public void promoteAJobFromOnHold() {
     for (Job job : jobsOnHoldCache) {
@@ -210,6 +220,8 @@ public class AerospikeJobs extends Jobs {
       });
     }
   }
+
+  //-----------------------------------------------------------------------------------
 
   @Override
   public boolean putWithNewState(Job job, Job.State from, Job.State to) {
@@ -237,15 +249,7 @@ public class AerospikeJobs extends Jobs {
     return success;
   }
 
-
-  public Job getJobWhereIdIs(int id) {
-    Key key = new Key(database.namespace, setName, id);
-    Policy readPolicy = new Policy();
-    ++Metering.jobGets;
-    Record record = database.client.get(readPolicy, key);
-    return record == null ? null : get(key, record);
-  }
-
+  //-----------------------------------------------------------------------------------
 
   public boolean put(Job job) {
     Database.assertWriteLocked(job.lock);
@@ -293,8 +297,16 @@ public class AerospikeJobs extends Jobs {
   }
 
   //-----------------------------------------------------------------------------------
-  // private stuff
 
+  public Job getJobWhereIdIs(int id) {
+    Key key = new Key(database.namespace, setName, id);
+    Policy readPolicy = new Policy();
+    ++Metering.jobGets;
+    Record record = database.client.get(readPolicy, key);
+    return record == null ? null : get(key, record);
+  }
+
+  //-----------------------------------------------------------------------------------
 
   private Job get(Key key, Record record) {
     Job job;
@@ -329,6 +341,7 @@ public class AerospikeJobs extends Jobs {
     return job;
   }
 
+  //-----------------------------------------------------------------------------------
 
   private int countWaiting;
   private int countInProcess;
