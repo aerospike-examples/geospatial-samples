@@ -297,8 +297,8 @@ public class App {
         Thread.sleep(999999999);
       } else {
         if (isRunningAdHocTest) {
-          System.out.println("Running ad hoc test instead of normal operation.");
-          new AdHocTest().run();
+//          System.out.println("Running ad hoc test instead of normal operation.");
+//          new AdHocTest().run();
         } else {
           doTheAnimation();
         }
