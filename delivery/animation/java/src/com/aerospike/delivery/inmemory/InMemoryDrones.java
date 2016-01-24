@@ -1,18 +1,24 @@
 package com.aerospike.delivery.inmemory;
 
+import com.aerospike.delivery.App;
 import com.aerospike.delivery.Drone;
 import com.aerospike.delivery.Drones;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
 
 
 public class InMemoryDrones extends Drones {
 
-  private final ConcurrentHashMap<Integer, Drone> contents;
+  private final Map<Integer, Drone> contents;
 
   public InMemoryDrones() {
-    contents = new ConcurrentHashMap<>();
+    contents = Collections.synchronizedMap(new HashMap<>());
   }
 
   public void add(Drone drone) {
@@ -67,22 +73,34 @@ public class InMemoryDrones extends Drones {
 
 
   @Override
-  public void refreshRenderCache() {
-    // Do nothing because we don't need a separate render cache.
-  }
-
-  @Override
-  public void foreachInRenderCache(Predicate<? super Drone> action) {
-    foreach(action);
-  }
-
-
-  @Override
   public void foreach(Predicate<? super Drone> action) {
-    for (Drone drone : contents.values()) {
-      if (!action.test(drone))
-        break;
+    Collection<Drone> values = contents.values();
+    synchronized (contents) {
+      for (Drone drone : values) {
+        if (!action.test(drone))
+          break;
+      }
     }
+  }
+
+
+  @Override
+  public BlockingQueue<Drone> makeQueueForRendering() {
+    BlockingQueue<Drone> result = new LinkedBlockingQueue<>();
+    App.executor.execute(() -> {
+      try {
+        Collection<Drone> values = contents.values();
+        synchronized (contents) {
+          for (Drone drone : values) {
+            result.add(drone.copy());
+          }
+        }
+        result.add(Drone.NullDrone);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    });
+    return result;
   }
 
 }

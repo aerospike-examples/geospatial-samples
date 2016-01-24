@@ -9,7 +9,8 @@ import java.awt.image.DataBufferInt;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.TimerTask;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -29,12 +30,11 @@ public class Renderer {
   private final Jobs jobs;
   private final Database database;
   private final DefaultColors colors;
-  private final long idealFramePeriod;
+  private final long desiredDrawingPeriod;
   private final BufferedImage bufferedImage;
   private final JComponentWithBufferedImage destinationComponent;
   private boolean isDrawingJobNumbers;
   private boolean isStopping;
-  private int fractionShown;
 
   public Renderer(Database database, int width, int height, JComponentWithBufferedImage destinationComponent) {
     super();
@@ -46,7 +46,7 @@ public class Renderer {
     this.height = height;
     this.colors = new DefaultColors();
     bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-    idealFramePeriod = (long) (1000_000_000. / maxFramesPerSecond);
+    desiredDrawingPeriod = (long) (1000_000_000. / maxFramesPerSecond);
     isDrawingJobNumbers = App.isDrawingJobNumbers;
   }
 
@@ -57,22 +57,6 @@ public class Renderer {
       drawThread.setName("Renderer");
       drawThread.start();
     }
-
-    // todo this is not the way to do this.
-    // The render loop should start these then wait for a Future from each.
-    // As soon as it gets from the future, it should submit another.
-    {
-      Thread droneScanThread = new Thread(new DroneScanningTask());
-      droneScanThread.setName("Drone scanning");
-      droneScanThread.start();
-    }
-
-    {
-      Thread jobScanThread = new Thread(new JobScanningTask());
-      jobScanThread.setName("Job scanning");
-      jobScanThread.start();
-    }
-
   }
 
 
@@ -81,90 +65,10 @@ public class Renderer {
   }
 
 
-  // todo desperately needs refactoring
-  class JobScanningTask implements Runnable {
-
-    /**
-     * Runs until stopped.
-     */
-    @Override
-    public void run() {
-      long previousFrameState = System.nanoTime();
-      for (int count = 0 ; !isStopping ; ++count) {
-        try {
-          jobs.refreshRenderCache();
-
-          long currentTime = System.nanoTime();
-          long timeTaken = currentTime - previousFrameState;
-          previousFrameState = currentTime;
-          long delayArg = idealFramePeriod - timeTaken;
-          if (delayArg > 0) {
-//            System.out.format("rendering rate %dfps, used %3.0f%% of the period\n", maxFramesPerSecond, 100. * timeTaken / idealFramePeriod);
-            delayNs(delayArg);
-          } else {
-            if (false) {
-              // This is needs work but seems hopeless.
-              // Better to pick a value for fractionShown and stick with it.
-              double seconds = timeTaken / 1_000_000_000.;
-              double rate = 1 / seconds;
-              System.out.format("rendering rate %.1ffps\n", rate);
-              // run at an ad-hoc lower frame rate, no delay.
-              int higherValue = 4 * fractionShown / 3;
-              fractionShown = Math.max(higherValue, fractionShown + 1);
-            }
-          }
-        } catch (Exception ex) {
-          ex.printStackTrace();
-          isStopping = true;
-        }
-      }
-    }
-
-  }
-
-  class DroneScanningTask implements Runnable {
-
-    /**
-     * Runs until stopped.
-     */
-    @Override
-    public void run() {
-      long previousFrameState = System.nanoTime();
-      for (int count = 0 ; !isStopping ; ++count) {
-        try {
-          drones.refreshRenderCache();
-
-          long currentTime = System.nanoTime();
-          long timeTaken = currentTime - previousFrameState;
-          previousFrameState = currentTime;
-          long delayArg = idealFramePeriod - timeTaken;
-          if (delayArg > 0) {
-//            System.out.format("rendering rate %dfps, used %3.0f%% of the period\n", maxFramesPerSecond, 100. * timeTaken / idealFramePeriod);
-            delayNs(delayArg);
-          } else {
-            if (false) {
-              // This is needs work but seems hopeless.
-              // Better to pick a value for fractionShown and stick with it.
-              double seconds = timeTaken / 1_000_000_000.;
-              double rate = 1 / seconds;
-              System.out.format("rendering rate %.1ffps\n", rate);
-              // run at an ad-hoc lower frame rate, no delay.
-              int higherValue = 4 * fractionShown / 3;
-              fractionShown = Math.max(higherValue, fractionShown + 1);
-            }
-          }
-        } catch (Exception ex) {
-          ex.printStackTrace();
-          isStopping = true;
-        }
-      }
-    }
-
-  }
-
   class DrawingTask implements Runnable {
 
     private Runnable imageCopier = new ImageCopier();
+    long drawingStartTime;
 
     public DrawingTask() {
       super();
@@ -175,37 +79,44 @@ public class Renderer {
      */
     @Override
     public void run() {
-      fractionShown = 1;
-      long previousFrameState = System.nanoTime();
-      for (int count = 0 ; !isStopping ; ++count) {
-        try {
-          draw();
-          SwingUtilities.invokeAndWait(imageCopier);
-
-          long currentTime = System.nanoTime();
-          long timeTaken = currentTime - previousFrameState;
-          previousFrameState = currentTime;
-          long delayArg = idealFramePeriod - timeTaken;
-          if (delayArg > 0) {
-//            System.out.format("rendering rate %dfps, used %3.0f%% of the period\n", maxFramesPerSecond, 100. * timeTaken / idealFramePeriod);
-            delayNs(delayArg);
-          } else {
-            if (false) {
-              // This is needs work but seems hopeless.
-              // Better to pick a value for fractionShown and stick with it.
-              double seconds = timeTaken / 1_000_000_000.;
-              double rate = 1 / seconds;
-              System.out.format("rendering rate %.1ffps\n", rate);
-              // run at an ad-hoc lower frame rate, no delay.
-              int higherValue = 4 * fractionShown / 3;
-              fractionShown = Math.max(higherValue, fractionShown + 1);
-            }
-          }
-        } catch (Exception ex) {
-          ex.printStackTrace();
-          isStopping = true;
+      drawingStartTime = System.nanoTime();
+      while (!isStopping) {
+        if (!render()) break;
+        long delayArg = calculateDelayUntilNextFrame();
+        if (delayArg > 0) {
+          // If we're lucky and drawing is quick enough
+//            System.out.format("rendering rate %dfps, used %3.0f%% of the period\n", maxFramesPerSecond, 100. * timeTaken / desiredDrawingPeriod);
+          delayNs(delayArg);
+        } else {
+          // Drawing took longer than we wanted.
+//          double seconds = timeTaken / 1_000_000_000.;
+//          double rate = 1 / seconds;
+//          System.out.format("rendering rate %.1ffps\n", rate);
         }
       }
+    }
+
+    private long calculateDelayUntilNextFrame() {
+      long currentTime = System.nanoTime();
+      long timeTaken   = currentTime - drawingStartTime;
+      drawingStartTime = currentTime;
+      return desiredDrawingPeriod - timeTaken;
+    }
+
+    private boolean render() {
+      if (database.isConnected()) {
+        // The Aerospike client's scanAll method feeds these queues from multiple threads.
+        BlockingQueue<Job>   jobsToDraw   = jobs  .makeQueueForRendering();
+        BlockingQueue<Drone> dronesToDraw = drones.makeQueueForRendering();
+        try {
+          draw(jobsToDraw, dronesToDraw);
+          SwingUtilities.invokeAndWait(imageCopier);
+        } catch (Exception e) {
+          e.printStackTrace(); // todo
+          return false;
+        }
+      }
+      return true;
     }
 
   }
@@ -253,25 +164,31 @@ public class Renderer {
 
   class DefaultColors {
     Color background = new Color(0, 0, 0);
-    Color circleFill = new Color(60, 60, 60, 128);
-    Color circleLine = new Color(80, 80, 80);
+    Color circleFill = new Color(93, 93, 93, 128);
+    Color circleLine = new Color(133, 133, 133);
 
     Color defaultJob = new Color(255, 170, 0);
-    Color deliveringJob = new Color(255, 0, 150);
+    Color candidateJob = new Color(220, 0, 255);
+    Color deliveringJob = candidateJob;
     Color onHoldJob = new Color(212, 0, 255);
-    Color candidateJob = new Color(178, 0, 255);
 
     final Color defaultDrone = new Color(119, 201, 255);
     final Color exampleDrone = defaultDrone;
     final Color offDutyDrone = defaultDrone;
     final Color readyDrone = defaultDrone;
 
-    final Color enroutePath = new Color(0, 94, 153);
+    final Color enroutePath = new Color(0, 153, 225);
     final Color deliveringPath = defaultDrone;
   }
 
+  private void draw(BlockingQueue<Job> jobsToDraw, BlockingQueue<Drone> dronesToDraw) throws InterruptedException {
+//      System.out.println("drawStuff " + ++count);
+    Graphics2D g2 = prepareToDraw();
+    drawTheLayers(jobsToDraw, dronesToDraw, g2);
+    g2.dispose();
+  }
 
-  private void draw() throws InterruptedException {
+  private Graphics2D prepareToDraw() {
     Graphics2D g2 = bufferedImage.createGraphics();
     g2.setRenderingHint(
         RenderingHints.KEY_ANTIALIASING,
@@ -279,31 +196,28 @@ public class Renderer {
     g2.setRenderingHint(
         RenderingHints.KEY_RENDERING,
         RenderingHints.VALUE_RENDER_QUALITY);
-    g2.setFont(new Font(null, Font.PLAIN, 8));
-    g2.setColor(colors.background);
-    g2.fillRect(0, 0, width, height);
-    g2.translate(-Database.mapWidthPx / 2, -Database.mapHeightPx / 2);
-//        g2.scale(-1, 1);
-//        System.out.println(g2.getRenderingHints());
-    drawStuff(g2);
-    g2.dispose();
+//      g2.scale(-1, 1);
+//      System.out.println(g2.getRenderingHints());
+    return g2;
   }
 
-  private void drawStuff(Graphics2D g) {
-    if (database.isConnected()) {
-      // layered from back to front
-      drawRegions(g);
-      drawCirclesAndPath(g);
-      drawJobs(g);
-      drawDrones(g);
-//      drawFractionShown(g);
-    }
+  private void drawTheLayers(BlockingQueue<Job> jobsToDraw, BlockingQueue<Drone> dronesToDraw, Graphics2D g2) throws InterruptedException {
+    // layered from back to front
+    g2.setColor(colors.background);
+    g2.fillRect(0, 0, width, height);
+    // Longitude increases leftwards. Latitude increases upwards.
+    g2.translate(-Database.mapWidthPx / 2, -Database.mapHeightPx / 2);
+    drawRegions(g2);
+    drawCirclesAndPath(g2);
+    drawJobs  (g2, jobsToDraw);
+    drawDrones(g2, dronesToDraw);
   }
+
 
   private void drawFractionShown(Graphics2D g2) {
     g2.setFont(new Font(null, Font.PLAIN, 10));
     g2.setColor(new Color(174, 227, 189));
-    g2.drawString(String.format("Drawing 1/%d", fractionShown), 3 * width / 2 - 70, 3 * width / 2 - 5);
+    g2.drawString(String.format("Drawing xx"), 3 * width / 2 - 70, 3 * width / 2 - 5);
     int radius = 100;
     int diameter = radius * 2;
   }
@@ -378,6 +292,7 @@ public class Renderer {
       int diameter = 2 * radius;
       g.setColor(colors.circleFill);
       g.fillOval(x - radius, y - radius, diameter, diameter);
+      g.setStroke(new BasicStroke(1));
       g.setColor(colors.circleLine);
       g.drawOval(x - radius, y - radius, diameter, diameter);
     }
@@ -385,26 +300,46 @@ public class Renderer {
 
   private void drawPath(Graphics2D g, Drone drone) {
     Location start = drone.startLocation;
-    Location begin = drone.job.getOrigin();
-    Location end = drone.job.getDestination();
-    int xStart = transformX(start.x);
-    int yStart = transformY(start.y);
-    int xBegin = transformX(begin.x);
-    int yBegin = transformY(begin.y);
-    int xEnd = transformX(end.x);
-    int yEnd = transformY(end.y);
-    g.setColor(colors.enroutePath);
-    g.drawLine(xStart, yStart, xBegin, yBegin);
-    g.setColor(colors.deliveringPath);
-    g.drawLine(xBegin, yBegin, xEnd, yEnd);
+    Job job = database.getJobs().getJobWhereIdIs(drone.jobId);
+    if (job == null) {
+      System.out.println("drawPath drone id " + drone.id);
+    } else {
+      Location begin = job.getOrigin();
+      Location end   = job.getDestination();
+      int xStart = transformX(start.x);
+      int yStart = transformY(start.y);
+      int xBegin = transformX(begin.x);
+      int yBegin = transformY(begin.y);
+      int xEnd = transformX(end.x);
+      int yEnd = transformY(end.y);
+      g.setStroke(new BasicStroke(3));
+      g.setColor(colors.enroutePath);
+      g.drawLine(xStart, yStart, xBegin, yBegin);
+      g.setStroke(new BasicStroke(3));
+      g.setColor(colors.deliveringPath);
+      g.drawLine(xBegin, yBegin, xEnd, yEnd);
+    }
   }
 
   //==================================================================================================================
 
-  public void drawJobs(Graphics2D g) {
-    jobs.foreachInRenderCache(job -> {
-      if ((job.id - 1) % fractionShown != 0) {
-        return true;
+  public void drawJobs(Graphics2D g, BlockingQueue<Job> jobsToDraw) throws InterruptedException {
+//    System.out.println("drawJobs");
+    while (true) {
+      Job job;
+      if (false) {
+        job = jobsToDraw.take();
+      } else {
+        // This timeout version allows for a breakpoint on continue.
+        while (true) {
+          job = jobsToDraw.poll(3, TimeUnit.SECONDS);
+          if (job != null) break;
+          continue;
+        }
+      }
+//      System.out.println("--> job " + job.id);
+      if (job == Job.NullJob) {
+        break;
       }
       // When the database is Aerospike, this runs in one of many client threads.
       switch (job.getState()) {
@@ -430,8 +365,7 @@ public class Renderer {
           drawJob(g, job, job.getLocation(), colors.onHoldJob, null);
           break;
       }
-      return true;
-    });
+    }
   }
 
   private synchronized void drawJob(Graphics2D g, Job job, Location location, Color jobColor, Color highlightColor) {
@@ -439,6 +373,7 @@ public class Renderer {
     final int r2 = r / 2;
     int x = transformX(location.x);
     int y = transformY(location.y);
+    g.setStroke(new BasicStroke(1));
     g.setColor(jobColor);
     g.fillRect(x - r2, y - r2, r, r);
     if (highlightColor != null) {
@@ -446,6 +381,7 @@ public class Renderer {
       g.drawRect(x - r2, y - r2, r, r);
     }
     if (isDrawingJobNumbers) {
+      g.setFont(new Font(null, Font.PLAIN, 8));
       g.setColor(Color.lightGray);
       g.drawString(String.format("%d", job.id), x + 5, y + 4);
     }
@@ -454,10 +390,21 @@ public class Renderer {
   //==================================================================================================================
 
 
-  private void drawDrones(Graphics2D g) {
-    drones.foreachInRenderCache(drone -> {
-      if ((drone.id - 1) % fractionShown != 0) {
-        return true;
+  public void drawDrones(Graphics2D g, BlockingQueue<Drone> dronesToDraw) throws InterruptedException {
+    while (true) {
+      Drone drone;
+      if (false) {
+        drone = dronesToDraw.take();
+      } else {
+        // This timeout version allows for a breakpoint on continue.
+        while (true) {
+          drone = dronesToDraw.poll(3, TimeUnit.SECONDS);
+          if (drone != null) break;
+          continue;
+        }
+      }
+      if (drone == Drone.NullDrone) {
+        break;
       }
       // When the database is Aerospike, this runs in one of many client threads.
       if (drone.hasJob()) {
@@ -501,8 +448,7 @@ public class Renderer {
             break;
         }
       }
-      return true;
-    });
+    }
   }
 
   private synchronized void drawDrone(Graphics2D g, Drone drone, Location location, Color color, boolean isMoving) {

@@ -1,5 +1,6 @@
 package com.aerospike.delivery;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
 
 
@@ -42,9 +43,7 @@ public abstract class Drones {
 
   public abstract void foreach(Predicate<? super Drone> action);
 
-  public abstract void refreshRenderCache();
-
-  public abstract void foreachInRenderCache(Predicate<? super Drone> action);
+  public abstract BlockingQueue<Drone> makeQueueForRendering();
 
   public abstract boolean put(Drone drone);
 

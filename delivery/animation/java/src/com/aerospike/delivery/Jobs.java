@@ -1,6 +1,7 @@
 package com.aerospike.delivery;
 
 
+import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
 
 public abstract class Jobs {
@@ -54,9 +55,7 @@ public abstract class Jobs {
 
   public abstract void foreach(                 Predicate<? super Job> action);
 
-  public abstract void refreshRenderCache();
-
-  public abstract void foreachInRenderCache(Predicate<? super Job> action);
+  public abstract BlockingQueue<Job> makeQueueForRendering();
 
   public abstract void promoteAJobFromOnHold();
 

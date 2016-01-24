@@ -3,11 +3,7 @@ package com.aerospike.delivery;
 
 import java.time.Instant;
 import java.util.Comparator;
-import java.util.concurrent.Callable;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import com.aerospike.delivery.Database;
 
 
 public class Job extends Movable implements Comparable<Job> {
@@ -24,8 +20,9 @@ public class Job extends Movable implements Comparable<Job> {
   Instant timePutOnHold;
   private Drone drone;
   public int droneid;
-  public final ReentrantReadWriteLock lock;
+  public final ReentrantReadWriteLock lock; // todo Renderer should readLock
   private boolean isCandidate; // found by the circle query
+  public static Job NullJob = new Job();
 
   public Job(Jobs jobs) {
     super();
@@ -54,7 +51,13 @@ public class Job extends Movable implements Comparable<Job> {
     lock = new ReentrantReadWriteLock(true);
   }
 
-  public boolean put() {
+  public Job() {
+    jobs = null;
+    id = NullID;
+    lock = null;
+  }
+
+    public boolean put() {
     Database.assertWriteLocked(lock);
     return jobs.put(this);
   }

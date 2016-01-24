@@ -8,7 +8,9 @@ import com.aerospike.client.query.Statement;
 import com.aerospike.delivery.*;
 
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
 
 
@@ -203,44 +205,49 @@ public class AerospikeJobs extends Jobs {
   //----------------------------------------------------------------------------------------
 
   @Override
-  public void refreshRenderCache() {
-    ScanPolicy scanPolicy = new ScanPolicy();
-    try {
-      /*
-       * Scan the entire Set using scannAll(). This will scan each node
-       * in the cluster and return the record Digest to the call back object
-       */
-      ++Metering.jobScans;
-      if (database.client.isConnected()) {
-        database.client.scanAll(scanPolicy, database.namespace, setName, new RefreshRenderCacheScanCallback());
+  public BlockingQueue<Job> makeQueueForRendering() {
+    final BlockingQueue<Job> result = new LinkedBlockingQueue<>();
+    App.executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        ScanPolicy scanPolicy = new ScanPolicy();
+        try {
+          /*
+           * Scan the entire Set using scannAll(). This will scan each node
+           * in the cluster and return the record Digest to the call back object
+           */
+          ++Metering.jobScans;
+          if (database.client.isConnected()) {
+            database.client.scanAll(scanPolicy, database.namespace, setName, new RefreshRenderCacheScanCallback(result));
+          }
+        } catch (AerospikeException e) {
+          int resultCode = e.getResultCode();
+          database.log.info(ResultCode.getResultString(resultCode));
+          database.log.debug("Error details: ", e);
+        }
+        result.add(Job.NullJob);
       }
-    } catch (AerospikeException e) {
-      int resultCode = e.getResultCode();
-      database.log.info(ResultCode.getResultString(resultCode));
-      database.log.debug("Error details: ", e);
-    }
-  }
 
+      class RefreshRenderCacheScanCallback implements ScanCallback {
 
-  class RefreshRenderCacheScanCallback implements ScanCallback {
+        private final BlockingQueue<Job> queue;
 
-    public void scanCallback(Key key, Record record) throws AerospikeException {
-      // todo Should we get them in batches?
-      ++Metering.jobScanResults;
-      Job job = get(key, record);
-      renderCache.put(key, job);
-    }
-  }
+        public RefreshRenderCacheScanCallback(BlockingQueue<Job> queue) {
+          this.queue = queue;
+        }
 
+        public void scanCallback(Key key, Record record) throws AerospikeException {
+          // todo Should we get them in batches?
+          ++Metering.jobScanResults;
+          Job job = get(key, record);
+          queue.add(job);
+        }
 
-  @Override
-  public void foreachInRenderCache(Predicate<? super Job> action) {
-    for (Job job : renderCache.values()) {
-      if (!action.test(job)) {
-        break;
       }
-    }
+    });
+    return result;
   }
+
 
   //----------------------------------------------------------------------------------------
 

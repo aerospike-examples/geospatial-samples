@@ -1,12 +1,11 @@
 package com.aerospike.delivery.inmemory;
 
-import com.aerospike.delivery.Database;
-import com.aerospike.delivery.Job;
-import com.aerospike.delivery.Jobs;
-import com.aerospike.delivery.Location;
+import com.aerospike.delivery.*;
 
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
 
 
@@ -93,13 +92,21 @@ public class InMemoryJobs extends Jobs {
   }
 
   @Override
-  public void refreshRenderCache() {
-    // Do nothing because we don't need a separate render cache.
-  }
-
-  @Override
-  public void foreachInRenderCache(Predicate<? super Job> action) {
-    foreach(action);
+  public BlockingQueue<Job> makeQueueForRendering() {
+    // todo Is there something that that takes a sequence of collections and returns an iterable?
+    // That would be better.
+    BlockingQueue<Job> result = new LinkedBlockingQueue<>();
+    App.executor.execute(() -> {
+      try {
+        result.addAll(jobsWaiting.values());
+        result.addAll(jobsInProcess.values());
+        result.addAll(jobsOnHold.values());
+        result.add(Job.NullJob);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    });
+    return result;
   }
 
 
@@ -146,6 +153,10 @@ public class InMemoryJobs extends Jobs {
   public Job getJobWhereIdIs(int id) {
     Job result;
     result = jobsWaiting.get(id);
+    if (result != null) return result;
+    result = jobsInProcess.get(id);
+    if (result != null) return result;
+    result = jobsOnHold.get(id);
     return null;
   }
 

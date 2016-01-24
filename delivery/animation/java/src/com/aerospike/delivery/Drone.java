@@ -1,11 +1,12 @@
 package com.aerospike.delivery;
 
 
-import com.aerospike.delivery.aerospike.AerospikeDrones;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 
 public class Drone extends Movable implements Runnable, Comparable<Drone> {
@@ -14,7 +15,9 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   public static int NullID  = 0;
   public static int FirstID = 1;
   public final int id;
+  public static final Drone NullDrone = new Drone();
 
+  public ReentrantReadWriteLock lock; // todo Renderer should readLock, vs writeLocks for modifications
   List<State> debugStates = new ArrayList<>(10);
   volatile boolean isActive;
   private boolean willGoOffDuty = false;
@@ -64,9 +67,9 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
 
   //-----------------------------------------------------------------------------------
 
-  // A drone object made this way is usable only by the Renderer.
-  public Drone(AerospikeDrones aerospikeDrones, int id, State state, Location location, int jobId, boolean isExample) {
-    drones = aerospikeDrones;
+  // The only purpose for a drone made this way is for the Renderer.
+  public Drone(Drones drones, int id, State state, Location location, int jobId, boolean isExample) {
+    this.drones = drones;
     this.id = id;
     this.state = state;
     super.setLocation(location);
@@ -81,6 +84,17 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
     waypoint = getLocation(); // todo Should this be here?
     this.id = this.drones.nextID++;
     candidates = new ArrayList<>();
+  }
+
+  public Drone() {
+    super();
+    drones = null;
+    id = NullID;
+  }
+
+  public Drone copy() {
+    Drone result = new Drone(drones, id, state, getLocation(), jobId, isExample);
+    return result;
   }
 
   public enum State {
@@ -233,7 +247,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
                 job.updateCoordinates();
                 return job.setStateAndPut(Job.State.Waiting);
               });
-              job = null;
+              setJob(null);
               setState(State.Ready);
             }
             continue;
@@ -243,7 +257,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
               return job.setStateAndPut(Job.State.Waiting);
             });
 //            System.out.println("- off3 " + this);
-            job = null;
+            setJob(null);
             isActive = false;
             setState(State.Init);
             currentRadius = 0;
@@ -258,20 +272,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
     }
   }
 
-  class TakeOffHold implements Runnable {
-    private final Job job;
-
-    public TakeOffHold(Job job) {
-      this.job = job;
-    }
-
-    @Override
-    public void run() {
-      job.setStateAndPut(Job.State.Waiting);
-    }
-  }
-
-  // Performance is terrible if false!
+  // For debugging, but performance is terrible if false!
   boolean isSchedulingInsteadOfDelaying = true;
 
   private boolean delayAndThen(long delay, State newState) throws InterruptedException {

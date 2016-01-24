@@ -8,13 +8,14 @@ import org.apache.commons.cli.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 
 public class App {
 
-  static Random random;
-  private static int minimumNumberOfWaitingJobs = 20; // At least 2
+  static Random random = new Random();
+  private static int minimumNumberOfWaitingJobs = 30; // At least 2
 
   // MapPanel looks at these.
   public static final String appName = "Aerospike Drone Courier";
@@ -136,9 +137,7 @@ public class App {
 
       if (cl.hasOption("fixed-seed")) {
         usingDefaultSeed = true;
-        random = new Random(2);
-      } else {
-        random = new Random();
+        random = new Random(6);
       }
 
       if (!cl.hasOption("tutorial") && !cl.hasOption("benchmark")) {
@@ -305,9 +304,10 @@ public class App {
       }
     } finally {
       database.close();
-      executor.shutdown();
-      // todo stopping the renderer should happen after the path goes away.
+      // todo Wait for the path to go away before stopping the renderer.
 //      Window.instance().renderingPanel.renderer.stop();
+      // todo Wait for the renderer to stop before shutting down the executor.
+//      executor.shutdown();
       // todo Something is still running.
       // Just as well. You don't want the window to disappear summarily.
     }
@@ -382,18 +382,24 @@ public class App {
     Jobs jobs = database.getJobs();
     int nbJobsRequired = backlogExcess(nbDronesRequired) - jobs.size();
     int currentTotal = database.getDrones().size();
+    CountDownLatch jobPromotionsLatch = new CountDownLatch(currentTotal);
     for (int id = 1 ; id <= currentTotal ; ++id) {
       executor.submit(() -> {
         jobs.promoteAJobFromOnHold();
+        jobPromotionsLatch.countDown();
       });
     }
+    CountDownLatch newDronesLatch = new CountDownLatch(Math.max(0, nbDronesRequired - currentTotal));
+    CountDownLatch newJobsLatch   = new CountDownLatch(Math.max(0, nbJobsRequired));
     for (int id = currentTotal + 1 ; id <= nbDronesRequired ; ++id) {
       executor.submit(() -> {
         Drone drone = database.getDrones().newDrone();
+        newDronesLatch.countDown();
       });
       if (--nbJobsRequired >= 0) {
         executor.submit(() -> {
           Job job = jobs.newJob(Job.State.Waiting);
+          newJobsLatch.countDown();
           Database.withWriteLock(job.lock, () -> {
             job.put();
             return true;
@@ -404,6 +410,7 @@ public class App {
         delayNs(durationNs);
       }
     }
+    newDronesLatch.await();
     database.getDrones().foreach(drone -> {
       if (drone.id <= nbExamples) {
         drone.setExample(true);
@@ -413,6 +420,8 @@ public class App {
         return false;
       }
     });
+    jobPromotionsLatch.await();
+    newJobsLatch.await();
   }
 
   private static void activate(long durationNs) throws InterruptedException {

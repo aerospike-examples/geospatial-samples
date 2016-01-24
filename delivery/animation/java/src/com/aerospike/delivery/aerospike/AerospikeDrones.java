@@ -1,10 +1,15 @@
 package com.aerospike.delivery.aerospike;
 
 import com.aerospike.client.*;
-import com.aerospike.client.policy.*;
+import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.RecordExistsAction;
+import com.aerospike.client.policy.ScanPolicy;
+import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.delivery.*;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
 
 
@@ -73,50 +78,50 @@ public class AerospikeDrones extends Drones {
   //-----------------------------------------------------------------------------------
 
   @Override
-  public void refreshRenderCache() {
-    ScanPolicy scanPolicy = new ScanPolicy();
-    try {
+  public BlockingQueue<Drone> makeQueueForRendering() {
+    BlockingQueue<Drone> result = new LinkedBlockingQueue<>();
+    App.executor.execute(new Runnable() {
+      @Override
+      public void run() {
+        ScanPolicy scanPolicy = new ScanPolicy();
+        try {
       /*
        * Scan the entire Set using scannAll(). This will scan each node
        * in the cluster and return the record Digest to the call back object
        */
-      if (database.client.isConnected()) {
-        ++Metering.droneScans;
-        database.client.scanAll(scanPolicy, database.namespace, setName, new OurScanCallback(), new String[]{});
+          if (database.client.isConnected()) {
+            ++Metering.droneScans;
+            database.client.scanAll(scanPolicy, database.namespace, setName, new OurScanCallback(result), new String[]{});
+          }
+        } catch (AerospikeException e) {
+          int resultCode = e.getResultCode();
+          database.log.info(ResultCode.getResultString(resultCode));
+          database.log.debug("Error details: ", e);
+        }
+        result.add(Drone.NullDrone);
       }
-    } catch (AerospikeException e) {
-      int resultCode = e.getResultCode();
-      database.log.info(ResultCode.getResultString(resultCode));
-      database.log.debug("Error details: ", e);
-    }
+
+      class OurScanCallback implements ScanCallback {
+
+        private final BlockingQueue<Drone> queue;
+
+        public OurScanCallback(BlockingQueue<Drone> queue) {
+          this.queue = queue;
+        }
+
+        public void scanCallback(Key key, Record record) throws AerospikeException {
+          ++Metering.droneScanResults;
+          Drone drone = get(key, record);
+          queue.add(drone);
+        }
+      }
+    });
+    return result;
   }
-
-  class OurScanCallback implements ScanCallback {
-
-    OurScanCallback() { }
-
-    public void scanCallback(Key key, Record record) throws AerospikeException {
-      ++Metering.droneScanResults;
-      Drone drone = get(key, record);
-      // This returns false if we're done, but scanAll can't be cut short.
-      renderCache.put(key, drone);
-    }
-  }
-
 
   @Override
   public void foreach(Predicate<? super Drone> action) {
     for (Drone drone : cache.values()) {
-      if (!action.test(drone)) {
-        break;
-      }
-    }
-  }
-
-
-  @Override
-  public void foreachInRenderCache(Predicate<? super Drone> action) {
-    for (Drone drone : renderCache.values()) {
       if (!action.test(drone)) {
         break;
       }
