@@ -84,7 +84,7 @@ public class OurOptions {
 //      options.addOption(null, "other", false, "Run an ad hoc test in the code");
 //      options.addOption(null, "nocache",    false, "Run aerospike without using a HashMap cache.");
 
-    // Doen't complain if the parser sees things other than the options above
+    // Doesn't complain if the parser sees things other than the options above
     CommandLineParser parser = new PosixParser();
     CommandLine cl = parser.parse(cliOptions, args, false);
 
