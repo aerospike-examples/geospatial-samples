@@ -1,4 +1,4 @@
-package com.aerospike.delivery;
+package com.aerospike.delivery.db.aerospike;
 /*
  * Copyright 2012-2015 Aerospike, Inc.
  *
@@ -19,6 +19,7 @@ package com.aerospike.delivery;
 
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
+import org.apache.commons.cli.CommandLine;
 
 /**
  * Configuration data.
@@ -29,35 +30,49 @@ public class Parameters {
   public final String user;
   public final String password;
   public final String namespace;
-  final String set;
-  WritePolicy writePolicy;
-  Policy policy;
-  boolean singleBin;
-  boolean hasGeo;
-  boolean hasUdf;
-  boolean hasLargeDataTypes;
 
-  protected Parameters(String host, int port, String user, String password, String namespace, String set) {
+  protected Parameters(String host, int port, String user, String password, String namespace) {
     this.host = host;
     this.port = port;
     this.user = user;
     this.password = password;
     this.namespace = namespace;
-    this.set = set;
+  }
+
+  // todo add these parameters then reparse
+  // with stopAtNonOption true so the parse fails if an unknown option argument is encountered.
+  static Parameters parseServerParameters(CommandLine cl) {
+    String host       = cl.getOptionValue("h", "127.0.0.1");
+    String portString = cl.getOptionValue("p", "3000");
+    String user       = cl.getOptionValue("U");
+    String password   = cl.getOptionValue("P");
+    String namespace  = cl.getOptionValue("n", "demo1");
+
+    int port = Integer.parseInt(portString);
+
+    if (user != null && password == null) {
+      java.io.Console console = System.console();
+
+      if (console != null) {
+        char[] pass = console.readPassword("Enter password:");
+
+        if (pass != null) {
+          password = new String(pass);
+        }
+      }
+    }
+    try {
+      return new Parameters(host, port, user, password, namespace);
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   @Override
   public String toString() {
     return "Parameters: host=" + host +
         " port=" + port +
-        " ns=" + namespace +
-        " set=" + set +
-        " single-bin=" + singleBin;
+        " ns=" + namespace;
   }
 
-  public String getBinName(String name)
-  {
-    // Single bin servers don't need a bin name.
-    return singleBin ? "" : name;
-  }
 }

@@ -1,8 +1,8 @@
 package com.aerospike.delivery.swing;
 
 
-import com.aerospike.delivery.App;
-import com.aerospike.delivery.Database;
+import com.aerospike.delivery.OurOptions;
+import com.aerospike.delivery.db.base.Database;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,7 +16,7 @@ public class Window extends JFrame {
   public MapPanel renderingPanel;
 
   public Window(Database database) {
-    super(App.appName);
+    super(OurOptions.instance.appName);
     OurContentPane contentPane = new OurContentPane(database);
     setContentPane(contentPane);
     enableCmdW(contentPane);

@@ -1,6 +1,11 @@
 package com.aerospike.delivery;
 
 
+import com.aerospike.delivery.db.base.Database;
+import com.aerospike.delivery.db.base.Drones;
+import com.aerospike.delivery.db.base.Jobs;
+import com.aerospike.delivery.util.OurExecutor;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,39 +19,35 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   private final Drones drones; // Where drones are stored
   public static int NullID  = 0;
   public static int FirstID = 1;
-  public final int id;
   public static final Drone NullDrone = new Drone();
 
   public ReentrantReadWriteLock lock; // todo Renderer should readLock, vs writeLocks for modifications
-  List<State> debugStates = new ArrayList<>(10);
-  volatile boolean isActive;
+
   private boolean willGoOffDuty = false;
   private int nbTrips;
   private List<Job> candidates;
 
-  static final TimeUnit timeUnit = TimeUnit.MILLISECONDS;
-  static long animationIntervalMs = 20;
+  private static final TimeUnit timeUnit = TimeUnit.MILLISECONDS;
 
-  //
   private long circleDelay()        { return slowdownFactor( 5); }
   private long initDelay()          { return slowdownFactor(10); }
   private long gotAJobDelay()       { return slowdownFactor(10); }
   private long departingDelay()     { return slowdownFactor(10); }
   private long arrivedAtJobDelay()  { return slowdownFactor( 5); }
   private long deliveredDelay()     { return slowdownFactor( 5); }
-  static double speed()             { return .0005 * App.animationSpeed; }
-  //
+  static double speed()             { return .0005 * OurOptions.instance.animationSpeed; }
+
   // Acceleration state
   private int speedStep;
   private final int nbSpeedSteps = 5;
   private double accelerationDistance;
   private double totalDistance;
 
-  // findNearbyJob()
-  static double startingRadius = .05;
   private boolean isSearchContinuing = false;
   private int nbSearchTries;
 
+  public final int id;
+  volatile boolean isActive;
   public Job job;
 
   //--- used by Renderer ----------------------------------
@@ -55,14 +56,14 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   public int jobId;
   //--- used by Renderer if drawing circle and path -------
   public Location startLocation; // Where we were when we got a job
-  public double currentRadius; // for display
-  public boolean isExample;
+  public double   currentRadius; // for display
+  public boolean  isExample;
 
-  Location waypoint; // where we'll be after a delay
+  private Location waypoint; // where we'll be after a delay
   private double radiusEnlargementFactor = 2;
 
   // For delayed submit in case we want to cancel
-  ScheduledFuture<?> future;
+  private ScheduledFuture<?> future;
 
 
   //-----------------------------------------------------------------------------------
@@ -181,8 +182,6 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
     isActive = true;
     try {
       while (true) {
-        if (state == State.Ready) debugStates.clear();
-        debugStates.add(state);
         switch (state) {
           case Init:
             nbTrips = 0;
@@ -193,7 +192,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
             startLocation = getLocation(); // used for drawing
             if (stillLookingForJob()) {
               long delay = circleDelay();
-              future = App.executor.schedule(this, isExample ? delay : 0, timeUnit);
+              future = OurExecutor.executor.schedule(this, isExample ? delay : 0, timeUnit);
               return;
             }
 //            System.out.println("- read " + this);
@@ -281,7 +280,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
       return false;
     }
     if (isSchedulingInsteadOfDelaying) {
-      future = App.executor.schedule(this, delay, timeUnit);
+      future = OurExecutor.executor.schedule(this, delay, timeUnit);
       return true;
     } else {
       Thread.sleep(delay);
@@ -329,11 +328,11 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
       }
       double currentSpeed = (isExample ? 1 : .5) * speed() * speedStep / nbSpeedSteps;
 //      System.out.printf("%d %f %f\n", speedStep, distance, currentSpeed);
-      double distancePerAnimationInterval = animationIntervalMs * currentSpeed;
+      double distancePerAnimationInterval = OurOptions.animationIntervalMs * currentSpeed;
       double thisSegment = Math.min(distanceToTarget, distancePerAnimationInterval);
       waypoint = getLocation().partWay(thisSegment, whereTo); // for next time
       double intervalPortion = thisSegment / distancePerAnimationInterval;
-      future = App.executor.schedule(this, (long) (animationIntervalMs * intervalPortion), timeUnit);
+      future = OurExecutor.executor.schedule(this, (long) (OurOptions.animationIntervalMs * intervalPortion), timeUnit);
 //      System.out.format("%s %s %1.3f   %1.3f   %1.3f   %s\n", waypoint, getLocation(), distance, thisSegment, intervalPortion, waypoint);
       result = true;
     }
@@ -366,7 +365,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   private Job findNearbyJob() {
 //    resetCandidates(); // should not be necessary
     if (!isSearchContinuing) {
-      currentRadius = startingRadius;
+      currentRadius = OurOptions.startingRadius;
       nbSearchTries = 0;
     } else {
       //currentInnerRadius = currentRadius; // not doing donut search
@@ -374,7 +373,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
       ++nbSearchTries;
     }
     FoundAction action = new FoundAction(candidates);
-    Jobs jobs = App.database.getJobs();
+    Jobs jobs = OurOptions.instance.database.getJobs();
     jobs.foreachJobNearestTo(getLocation(), currentRadius, action);
     Collections.sort(candidates, new Job.DistanceComparator(getLocation()));
     for (Job job : candidates) {
@@ -423,7 +422,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
 
   @Override
   public String toString() {
-    return String.format("%d %.5s %s %s", id, isActive, getLocation(), debugStates.size() > 0 ? debugStates.get(debugStates.size() - 1) : "");
+    return String.format("%d %.5s %s", id, isActive, getLocation());
   }
 
 }

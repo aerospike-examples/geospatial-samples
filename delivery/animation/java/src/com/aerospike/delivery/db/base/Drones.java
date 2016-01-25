@@ -1,4 +1,6 @@
-package com.aerospike.delivery;
+package com.aerospike.delivery.db.base;
+
+import com.aerospike.delivery.Drone;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
@@ -6,7 +8,7 @@ import java.util.function.Predicate;
 
 public abstract class Drones {
 
-  int nextID;
+  public int nextID;
   private int size;
 
   public Drones() {

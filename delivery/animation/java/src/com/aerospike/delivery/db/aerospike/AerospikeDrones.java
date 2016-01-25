@@ -1,4 +1,4 @@
-package com.aerospike.delivery.aerospike;
+package com.aerospike.delivery.db.aerospike;
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.Policy;
@@ -6,6 +6,8 @@ import com.aerospike.client.policy.RecordExistsAction;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.delivery.*;
+import com.aerospike.delivery.db.base.Drones;
+import com.aerospike.delivery.util.OurExecutor;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,7 +82,7 @@ public class AerospikeDrones extends Drones {
   @Override
   public BlockingQueue<Drone> makeQueueForRendering() {
     BlockingQueue<Drone> result = new LinkedBlockingQueue<>();
-    App.executor.execute(new Runnable() {
+    OurExecutor.executor.execute(new Runnable() {
       @Override
       public void run() {
         ScanPolicy scanPolicy = new ScanPolicy();

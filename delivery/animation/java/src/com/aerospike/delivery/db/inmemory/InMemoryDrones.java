@@ -1,8 +1,8 @@
-package com.aerospike.delivery.inmemory;
+package com.aerospike.delivery.db.inmemory;
 
-import com.aerospike.delivery.App;
 import com.aerospike.delivery.Drone;
-import com.aerospike.delivery.Drones;
+import com.aerospike.delivery.db.base.Drones;
+import com.aerospike.delivery.util.OurExecutor;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -87,7 +87,7 @@ public class InMemoryDrones extends Drones {
   @Override
   public BlockingQueue<Drone> makeQueueForRendering() {
     BlockingQueue<Drone> result = new LinkedBlockingQueue<>();
-    App.executor.execute(() -> {
+    OurExecutor.executor.execute(() -> {
       try {
         Collection<Drone> values = contents.values();
         synchronized (contents) {

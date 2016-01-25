@@ -1,6 +1,6 @@
 package com.aerospike.delivery.swing;
 
-import com.aerospike.delivery.*;
+import com.aerospike.delivery.db.base.Database;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;

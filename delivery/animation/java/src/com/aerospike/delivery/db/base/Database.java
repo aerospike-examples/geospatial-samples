@@ -1,8 +1,9 @@
-package com.aerospike.delivery;
+package com.aerospike.delivery.db.base;
 
 
-import com.aerospike.delivery.aerospike.AerospikeDatabase;
-import com.aerospike.delivery.inmemory.InMemoryDatabase;
+import com.aerospike.delivery.db.aerospike.AerospikeDatabase;
+import com.aerospike.delivery.db.inmemory.InMemoryDatabase;
+import org.apache.commons.cli.CommandLine;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -23,6 +24,10 @@ public abstract class Database {
 
   //----------------------------------------------------------------------------------
 
+  public static Database makeInMemoryDatabase(CommandLine commandLine) {
+    return makeInMemoryDatabase();
+  }
+
   public static Database makeInMemoryDatabase() {
     if (sharedInstance == null) {
       return sharedInstance = new InMemoryDatabase();
@@ -33,9 +38,21 @@ public abstract class Database {
     }
   }
 
-  public static Database makeAerospikeDatabase(Parameters parameters, boolean useCaching) {
-    return new AerospikeDatabase(parameters, useCaching);
+  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  public static Database makeAerospikeDatabase(CommandLine commandLine) {
+    AerospikeDatabase database = makeAerospikeDatabase();
+    if (database.parseOptions(commandLine)) {
+      return database;
+    } else {
+      return null;
+    }
   }
+
+  public static AerospikeDatabase makeAerospikeDatabase() {
+    return new AerospikeDatabase();
+  }
+
 
   //----------------------------------------------------------------------------------
 
@@ -95,4 +112,5 @@ public abstract class Database {
       throw new AssertionError("Call this operation from inside withReadLocked().");
     }
   }
+
 }

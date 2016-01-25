@@ -1,6 +1,8 @@
 package com.aerospike.delivery;
 
 
+import com.aerospike.delivery.db.base.Database;
+import com.aerospike.delivery.util.OurRandom;
 import com.google.gson.Gson;
 
 import java.awt.Point;
@@ -45,8 +47,8 @@ public class Location extends Point.Double {
       random01x = (int) (nextGaussianScaled(xStretch) * Database.mapWidthPx) / (double) Database.mapWidthPx;
       random01y = (int) (nextGaussianScaled(yStretch) * Database.mapHeightPx) / (double) Database.mapHeightPx;
     } else {
-      random01x = App.random.nextInt(Database.mapWidthPx) / (double) Database.mapWidthPx;
-      random01y = App.random.nextInt(Database.mapHeightPx) / (double) Database.mapHeightPx;
+      random01x = OurRandom.instance.nextInt(Database.mapWidthPx) / (double) Database.mapWidthPx;
+      random01y = OurRandom.instance.nextInt(Database.mapHeightPx) / (double) Database.mapHeightPx;
     }
     Location result = new Location(random01x - .5, random01y - .5);
 //    System.out.printf("%s %f\n", result, random01x);
@@ -57,7 +59,7 @@ public class Location extends Point.Double {
     final double factor = 4 * stretch;
     double result;
     do {
-      result = App.random.nextGaussian() / factor;
+      result = OurRandom.instance.nextGaussian() / factor;
     } while (result < -.5 || .5 < result);
     return result;
   }

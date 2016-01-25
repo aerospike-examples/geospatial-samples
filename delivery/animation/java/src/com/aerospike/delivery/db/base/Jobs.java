@@ -1,15 +1,20 @@
-package com.aerospike.delivery;
+package com.aerospike.delivery.db.base;
 
+
+import com.aerospike.delivery.App;
+import com.aerospike.delivery.Job;
+import com.aerospike.delivery.Location;
+import com.aerospike.delivery.OurOptions;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
 
 public abstract class Jobs {
 
-  int nextID;
+  public int nextID;
   private int size;
 
-  protected class Metadata { }
+  public class Metadata { }
 
 
   public Jobs() {
@@ -68,7 +73,7 @@ public abstract class Jobs {
   // private stuff
 
   private void ensureEnoughJobs() {
-    int nbDrones = App.database.getDrones().size();
+    int nbDrones = OurOptions.instance.database.getDrones().size();
     int nbWaiting = size(Job.State.Waiting);
     int count = App.backlogExcess(nbDrones) - nbWaiting;
     if (count > 0) {

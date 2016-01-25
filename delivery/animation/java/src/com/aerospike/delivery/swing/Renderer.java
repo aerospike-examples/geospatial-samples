@@ -1,9 +1,14 @@
 package com.aerospike.delivery.swing;
 
 import com.aerospike.delivery.*;
-import com.aerospike.delivery.aerospike.AerospikeDatabase;
-import com.aerospike.delivery.aerospike.AerospikeJobs;
-import com.aerospike.delivery.inmemory.InMemoryDrones;
+import com.aerospike.delivery.db.aerospike.AerospikeDatabase;
+import com.aerospike.delivery.db.aerospike.AerospikeDrones;
+import com.aerospike.delivery.db.aerospike.AerospikeJobs;
+import com.aerospike.delivery.db.base.Database;
+import com.aerospike.delivery.db.base.Drones;
+import com.aerospike.delivery.db.base.Jobs;
+import com.aerospike.delivery.db.inmemory.InMemoryDrones;
+import com.aerospike.delivery.util.OurExecutor;
 
 import java.awt.image.DataBufferInt;
 import javax.swing.*;
@@ -22,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Renderer {
 
-  final int maxFramesPerSecond = 30;
+  public static final int maxFramesPerSecond = 15; // Best if this matches the Drone.
 
   private final int width;
   private final int height;
@@ -47,7 +52,7 @@ public class Renderer {
     this.colors = new DefaultColors();
     bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     desiredDrawingPeriod = (long) (1000_000_000. / maxFramesPerSecond);
-    isDrawingJobNumbers = App.isDrawingJobNumbers;
+    isDrawingJobNumbers = OurOptions.instance.isDrawingJobNumbers;
   }
 
 
@@ -484,11 +489,11 @@ public class Renderer {
 
   // for testing
   public static void main(String[] args) {
-    App.doCommandLineOptions(args);
-    AerospikeDatabase database = new AerospikeDatabase(App.parameters, true);
-    AerospikeJobs    jobs    = (AerospikeJobs)    database.getJobs();
-    InMemoryDrones drones = (InMemoryDrones) database.getDrones();
-    if (database.connect()) {
+    OurOptions options = new OurOptions();
+    options.doCommandLineOptions("render-test", args);
+    AerospikeJobs   jobs   = (AerospikeJobs)    options.database.getJobs();
+    AerospikeDrones drones = (AerospikeDrones) options.database.getDrones();
+    if (options.database.connect()) {
       try {
 //        database.clear();
         jobs.newJob(Job.State.Init);
@@ -507,7 +512,7 @@ public class Renderer {
         int width = 800;
         int height = 800;
         BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Renderer renderer = new Renderer(database, width, height, new MyJPanel(bi));
+        Renderer renderer = new Renderer(options.database, width, height, new MyJPanel(bi));
         renderer.start();
 
         Thread.sleep(99999999);
@@ -515,14 +520,14 @@ public class Renderer {
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
-        database.close();
+        options.database.close();
 //        database.log.removeAllAppenders();
 //        org.apache.log4j.LogManager.shutdown();
       }
     } else {
       System.err.println("Couldn't connect.");
     }
-    App.executor.shutdownNow();
+    OurExecutor.executor.shutdownNow();
   }
 
   private static void getAndPrintJob(Jobs jobs, int id) {

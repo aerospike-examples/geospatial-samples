@@ -1,6 +1,9 @@
-package com.aerospike.delivery.inmemory;
+package com.aerospike.delivery.db.inmemory;
 
 import com.aerospike.delivery.*;
+import com.aerospike.delivery.db.base.Database;
+import com.aerospike.delivery.db.base.Jobs;
+import com.aerospike.delivery.util.OurExecutor;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -96,7 +99,7 @@ public class InMemoryJobs extends Jobs {
     // todo Is there something that that takes a sequence of collections and returns an iterable?
     // That would be better.
     BlockingQueue<Job> result = new LinkedBlockingQueue<>();
-    App.executor.execute(() -> {
+    OurExecutor.executor.execute(() -> {
       try {
         result.addAll(jobsWaiting.values());
         result.addAll(jobsInProcess.values());

@@ -1,4 +1,4 @@
-package com.aerospike.delivery.aerospike;
+package com.aerospike.delivery.db.aerospike;
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.*;
@@ -6,6 +6,9 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
 import com.aerospike.delivery.*;
+import com.aerospike.delivery.db.base.Database;
+import com.aerospike.delivery.db.base.Jobs;
+import com.aerospike.delivery.util.OurExecutor;
 
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -207,7 +210,7 @@ public class AerospikeJobs extends Jobs {
   @Override
   public BlockingQueue<Job> makeQueueForRendering() {
     final BlockingQueue<Job> result = new LinkedBlockingQueue<>();
-    App.executor.execute(new Runnable() {
+    OurExecutor.executor.execute(new Runnable() {
       @Override
       public void run() {
         ScanPolicy scanPolicy = new ScanPolicy();

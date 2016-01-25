@@ -1,7 +1,7 @@
-package com.aerospike.delivery.inmemory;
+package com.aerospike.delivery.db.inmemory;
 
 
-import com.aerospike.delivery.Database;
+import com.aerospike.delivery.db.base.Database;
 
 public class InMemoryDatabase extends Database {
 

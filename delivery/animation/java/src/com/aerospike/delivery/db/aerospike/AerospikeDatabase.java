@@ -1,41 +1,54 @@
-package com.aerospike.delivery.aerospike;
+package com.aerospike.delivery.db.aerospike;
 
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.ClientPolicy;
 import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.delivery.*;
+import com.aerospike.delivery.db.base.Database;
+import com.aerospike.delivery.util.OurExecutor;
+import org.apache.commons.cli.CommandLine;
 import org.apache.log4j.Logger;
 
 public class AerospikeDatabase extends Database {
 
-  private final Parameters parameters;
-  public final String namespace;
-  private final boolean useCaching;
+  private Parameters parameters;
+  public String namespace;
   AerospikeClient client;
-  final ClientPolicy clientPolicy;
-  Logger log;
+  private final ClientPolicy clientPolicy;
+  final Logger log;
 
-  public AerospikeDatabase(Parameters parameters, boolean useCaching) {
-    this.parameters = parameters;
-    this.useCaching = useCaching;
-    this.namespace = parameters.namespace;
+
+  public AerospikeDatabase() {
+    namespace = "test"; //default
     clientPolicy = new ClientPolicy();
-    clientPolicy.user     = parameters.user;
+    clientPolicy.failIfNotConnected = true;
+    log = Logger.getLogger(AerospikeDatabase.class);
+  }
+
+  public boolean parseOptions(CommandLine commandLine) {
+    parameters = Parameters.parseServerParameters(commandLine);
+    if (parameters == null) {
+      return false;
+    }
+    this.namespace = parameters.namespace;
+    clientPolicy.user = parameters.user;
     clientPolicy.password = parameters.password;
     clientPolicy.failIfNotConnected = true;
-
-    drones = new AerospikeDrones(this);
-    jobs    = new AerospikeJobs(this);
-
-    new Thread(new Metering()).start();
-    log = Logger.getLogger(AerospikeDatabase.class);
+    return true;
   }
 
   @Override
   public boolean connect() {
     client = new AerospikeClient(clientPolicy, parameters.host, parameters.port);
-    return client.isConnected();
+    if (client.isConnected()) {
+      drones = new AerospikeDrones(this);
+      jobs = new AerospikeJobs(this);
+      new Thread(new Metering()).start();
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override
@@ -104,9 +117,10 @@ public class AerospikeDatabase extends Database {
 
   // for testing
   public static void main(String[] args) {
-    App.doCommandLineOptions(args);
+    OurOptions options = new OurOptions();
+    options.doCommandLineOptions("ae-test", args);
     boolean useCaching = false;
-    AerospikeDatabase database = new AerospikeDatabase(App.parameters, useCaching);
+    AerospikeDatabase database = Database.makeAerospikeDatabase();
     AerospikeJobs jobs = (AerospikeJobs) database.getJobs();
     if (database.connect()) {
       try {
@@ -131,7 +145,7 @@ public class AerospikeDatabase extends Database {
     } else {
       System.err.println("Couldn't connect.");
     }
-    App.executor.shutdownNow();
+    OurExecutor.executor.shutdownNow();
   }
 
   private static void getAndPrintJob(AerospikeJobs jobs, int id) {

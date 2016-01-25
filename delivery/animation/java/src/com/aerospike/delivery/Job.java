@@ -1,6 +1,9 @@
 package com.aerospike.delivery;
 
 
+import com.aerospike.delivery.db.base.Database;
+import com.aerospike.delivery.db.base.Jobs;
+
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
