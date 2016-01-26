@@ -19,6 +19,7 @@ public class Job extends Movable implements Comparable<Job> {
   public final int id;
   public Location origin;
   public Location destination;
+  public Location previousLocation;
   public State state;
   Instant timePutOnHold;
   private Drone drone;
@@ -34,12 +35,13 @@ public class Job extends Movable implements Comparable<Job> {
     state = State.Init;
     origin = getLocation();
     destination = Location.makeRandom();
+    previousLocation = getLocation();
     jobs.initMetadata(this);
     lock = new ReentrantReadWriteLock(true);
   }
 
   public Job(Jobs jobs, Jobs.Metadata metadata, int id, State state,
-             Location origin, Location destination, Location location,
+             Location origin, Location destination, Location location, Location previousLocation,
              int droneId, boolean isCandidate) {
     super();
     this.jobs = jobs;
@@ -51,6 +53,7 @@ public class Job extends Movable implements Comparable<Job> {
     this.origin = origin;
     this.destination = destination;
     super.setLocation(location);
+    this.previousLocation = previousLocation;
     lock = new ReentrantReadWriteLock(true);
   }
 
@@ -76,6 +79,7 @@ public class Job extends Movable implements Comparable<Job> {
   @Override
   public void setLocation(Location newValue) {
     Database.assertWriteLocked(lock);
+    previousLocation = getLocation();
     super.setLocation(newValue);
   }
 

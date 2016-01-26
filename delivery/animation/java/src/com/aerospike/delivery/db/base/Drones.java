@@ -43,7 +43,7 @@ public abstract class Drones {
 
   public abstract boolean changeState(Drone drone, Drone.State from, Drone.State to);
 
-  public abstract void foreach(Predicate<? super Drone> action);
+  public abstract void foreachCached(Predicate<? super Drone> action);
 
   public abstract BlockingQueue<Drone> makeQueueForRendering();
 

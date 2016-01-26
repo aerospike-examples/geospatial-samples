@@ -73,7 +73,7 @@ public class InMemoryDrones extends Drones {
 
 
   @Override
-  public void foreach(Predicate<? super Drone> action) {
+  public void foreachCached(Predicate<? super Drone> action) {
     Collection<Drone> values = contents.values();
     synchronized (contents) {
       for (Drone drone : values) {

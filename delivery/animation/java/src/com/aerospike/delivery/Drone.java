@@ -56,6 +56,8 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   public int jobId;
   //--- used by Renderer if drawing circle and path -------
   public Location startLocation; // Where we were when we got a job
+  public Location jobOrigin;
+  public Location jobDestination;
   public double   currentRadius; // for display
   public boolean  isExample;
 
@@ -69,13 +71,19 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   //-----------------------------------------------------------------------------------
 
   // The only purpose for a drone made this way is for the Renderer.
-  public Drone(Drones drones, int id, State state, Location location, int jobId, boolean isExample) {
-    this.drones = drones;
-    this.id = id;
-    this.state = state;
-    super.setLocation(location);
-    this.jobId = jobId;
-    this.isExample = isExample;
+  public Drone(Drones drones, int id, State state, Location location, int jobId, boolean isExample, double radius,
+               Location startLocation, Location jobOrigin, Location jobDestination) {
+    this.drones       = drones;
+    this.id            = id;
+    this.state         = state;
+    super.setLocation   (location);
+    this.jobId         = jobId;
+    this.isExample     = isExample;
+    this.currentRadius = radius;
+    this.startLocation = startLocation;
+    this.jobOrigin      = jobOrigin;
+    this.jobDestination = jobDestination;
+
   }
 
   public Drone(Drones drones) {
@@ -94,7 +102,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   }
 
   public Drone copy() {
-    Drone result = new Drone(drones, id, state, getLocation(), jobId, isExample);
+    Drone result = new Drone(drones, id, state, getLocation(), jobId, isExample, currentRadius, startLocation, jobOrigin, jobDestination);
     return result;
   }
 
@@ -162,9 +170,13 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   public void setJob(Job newValue) {
     job = newValue;
     if (newValue != null) {
-      jobId = job.id;
+      jobId          = job.id;
+      jobOrigin      = job.origin;
+      jobDestination = job.destination;
     } else {
-      jobId = Job.NullID;
+      jobId          = Job.NullID;
+      jobOrigin      = null;
+      jobDestination = null;
     }
     put();
   }
@@ -228,6 +240,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
               return; else continue;
           case Delivered:
             setState(State.Done);
+            job.previousLocation = job.getLocation();
             continue;
           case Done:
             if (willGoOffDuty && (isExample || id == FirstID)) {

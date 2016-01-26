@@ -33,8 +33,11 @@ public class Location extends Point.Double {
   }
 
   public static Location makeFromGeoJSONPointDouble(String geoJSON) {
-    GeoJSONPointDouble geo = new Gson().fromJson(geoJSON, GeoJSONPointDouble.class);
-    Location result = new Location(geo.coordinates[0], geo.coordinates[1]);
+    Location result = null;
+    if (geoJSON != null) {
+      GeoJSONPointDouble geo = new Gson().fromJson(geoJSON, GeoJSONPointDouble.class);
+      result = new Location(geo.coordinates[0], geo.coordinates[1]);
+    }
     return result;
   }
 

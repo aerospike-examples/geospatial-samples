@@ -73,6 +73,7 @@ public class App {
       case Full:
         System.out.println("Running animation.");
         options.database.clear();
+        // Fall through.
       case Observe:
         Window.createWindow(options.database);
         Window.instance().renderingPanel.renderer.start();
@@ -89,6 +90,7 @@ public class App {
         System.out.println("Clearing the Aerospike database.");
       } else if (options.animationMode == OurOptions.AnimationMode.Observe) {
         System.out.println("Running in observe mode.");
+        App.isDrawingCirclesAndLines = true;
         Thread.sleep(999999999);
       } else {
         if (options.isRunningAdHocTest) {
@@ -118,10 +120,8 @@ public class App {
     int pauseMs = 2000;
     int durationNs = 20_000_000;
 
-    boolean isDrawingCirclesAndLines = options.databaseToUse == OurOptions.DatabaseToUse.Aerospike ? false : true;
-
     if (options.isShowingTutorial) {
-      activateAndWait(1, 1, options.nbTrips, durationNs, isDrawingCirclesAndLines);
+      activateAndWait(1, 1, options.nbTrips, durationNs, true);
       if (options.isRunningBenchmark) {
         delayMs(pauseMs * 2);
       }
@@ -131,7 +131,7 @@ public class App {
       slowdownFactor = benchmarkSlowdownFactor;
       options.isDrawingJobNumbers = false;
       for (int i = 0 ; i < 99 ; ++i) {
-        activateAndWait(options.nbBenchmarkDrones, 1, options.nbTrips, durationNs, isDrawingCirclesAndLines);
+        activateAndWait(options.nbBenchmarkDrones, 1, options.nbTrips, durationNs, true);
         delayMs(pauseMs);
       }
     }
@@ -166,7 +166,7 @@ public class App {
 
   private static void prepareCountDownLatch(int totalDrones) {
     Set<Drone> drones = new HashSet<>();
-    options.database.getDrones().foreach(drone -> {
+    options.database.getDrones().foreachCached(drone -> {
       drones.add(drone);
       return true;
     });
@@ -207,7 +207,7 @@ public class App {
       }
     }
     newDronesLatch.await();
-    options.database.getDrones().foreach(drone -> {
+    options.database.getDrones().foreachCached(drone -> {
       if (drone.id <= nbExamples) {
         drone.setExample(true);
         exampleDrones.add(drone);
@@ -222,7 +222,7 @@ public class App {
 
   private static void activate(long durationNs) throws InterruptedException {
     isLeadDroneStillRunning = true;
-    options.database.getDrones().foreach(drone -> {
+    options.database.getDrones().foreachCached(drone -> {
       if (!drone.isActive) {
         OurExecutor.executor.submit(drone);
       }

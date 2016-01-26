@@ -29,7 +29,7 @@ public class Metering implements Runnable {
     }
 
   private void printJobStats() {
-    System.out.format("jobs: circle %3d:%4d   puts %4d   gets %d   scans %2d:%4d\n",
+    System.out.format("jobs: circle %3d:%4d   puts %4d   gets %2d   scans %2d:%4d\n",
         jobQueryWithinRadius / nbSeconds,
         jobRadiusResults     / nbSeconds,
         jobPuts              / nbSeconds,
@@ -39,20 +39,22 @@ public class Metering implements Runnable {
     );
     jobQueryWithinRadius = 0;
     jobRadiusResults = 0;
+    jobPuts = 0;
+    jobGets = 0;
     jobScans = 0;
     jobScanResults = 0;
-    jobPuts = 0;
   }
 
   private void printDroneStats() {
-    System.out.format("drones:                 puts %4d   gets %d   scans %2d:%4d\n",
+    System.out.format("drones:                 puts %4d   gets %2d   scans %2d:%4d\n",
         dronePuts              / nbSeconds,
         droneGets              / nbSeconds,
         droneScans             / nbSeconds,
         droneScanResults       / nbSeconds
     );
+    dronePuts = 0;
+    droneGets = 0;
     droneScans = 0;
     droneScanResults = 0;
-    dronePuts = 0;
   }
 }

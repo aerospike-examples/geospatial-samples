@@ -9,6 +9,9 @@ import com.aerospike.delivery.*;
 import com.aerospike.delivery.db.base.Drones;
 import com.aerospike.delivery.util.OurExecutor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,7 +22,7 @@ public class AerospikeDrones extends Drones {
 
   private final AerospikeDatabase database;
   String setName;
-  private ConcurrentHashMap<Key, Drone> cache;
+  private List<Drone> cache; // a List so we can iterate in id order.
   private ConcurrentHashMap<Key, Drone> renderCache;
   private WritePolicy writePolicy;
 
@@ -27,7 +30,7 @@ public class AerospikeDrones extends Drones {
   public AerospikeDrones(AerospikeDatabase database) {
     this.database = database;
     setName = "drones";
-    cache = new ConcurrentHashMap<>();
+    cache = new ArrayList<>();
     renderCache = new ConcurrentHashMap<>();
     makeWritePolicy();
   }
@@ -93,12 +96,11 @@ public class AerospikeDrones extends Drones {
        */
           if (database.client.isConnected()) {
             ++Metering.droneScans;
-            database.client.scanAll(scanPolicy, database.namespace, setName, new OurScanCallback(result), new String[]{});
+            database.client.scanAll(scanPolicy, database.namespace, setName, new OurScanCallback(result));
           }
         } catch (AerospikeException e) {
           int resultCode = e.getResultCode();
-          database.log.info(ResultCode.getResultString(resultCode));
-          database.log.debug("Error details: ", e);
+          System.err.format("scanAll of %-6s %s %s\n", setName, ResultCode.getResultString(resultCode), e);
         }
         result.add(Drone.NullDrone);
       }
@@ -111,7 +113,7 @@ public class AerospikeDrones extends Drones {
           this.queue = queue;
         }
 
-        public void scanCallback(Key key, Record record) throws AerospikeException {
+        public void scanCallback(Key key, Record record) {
           ++Metering.droneScanResults;
           Drone drone = get(key, record);
           queue.add(drone);
@@ -122,8 +124,8 @@ public class AerospikeDrones extends Drones {
   }
 
   @Override
-  public void foreach(Predicate<? super Drone> action) {
-    for (Drone drone : cache.values()) {
+  public void foreachCached(Predicate<? super Drone> action) {
+    for (Drone drone : cache) {
       if (!action.test(drone)) {
         break;
       }
@@ -132,31 +134,55 @@ public class AerospikeDrones extends Drones {
 
   //-----------------------------------------------------------------------------------
 
-  Drone get(int id) {
-    Key key = new Key(database.namespace, setName, id);
-    Policy readPolicy = new Policy();
-    Record record = database.client.get(readPolicy, key);
-    return record == null ? null : get(key, record);
-  }
-
   // Store only what is needed by Renderer.
   public boolean put(Drone drone) {
     Key key = new Key(database.namespace, setName, drone.id);
-    cache.put(key, drone);
-    Bin idBin       = new Bin("id",       drone.id);
-    Bin stateBin    = new Bin("state",    drone.state.name());
-    Bin locationBin =     Bin.asGeoJSON("location", drone.getLocation().toGeoJSONPointDouble());
-    Bin jobIdBin    = new Bin("jobID",    drone.jobId);
-    Bin exampleBin  = new Bin("example",  drone.isExample);
-//    Bin radius  = new Bin("radius",   drone.currentRadius);
-//    Bin start   = new Bin("start",    drone.startLocation);
+    putIntoCache(drone);
+    Bin idBin = new Bin("id", drone.id);
+    Bin stateBin = new Bin("state", drone.state.name());
+    Bin locationBin = Bin.asGeoJSON("location", drone.getLocation().toGeoJSONPointDouble());
+    Bin jobIdBin = new Bin("jobID", drone.jobId);
+    Bin exampleBin = new Bin("example", drone.isExample);
+    Bin radiusBin = new Bin("radius", drone.currentRadius);
+    Bin startBin          = null;
+    Bin jobOriginBin      = null;
+    Bin jobDestinationBin = null;
+    List<Bin> binsList = new ArrayList<>(Arrays.asList(idBin, stateBin, locationBin, jobIdBin, exampleBin, radiusBin));
+    if (drone.startLocation != null) {
+      startBin = Bin.asGeoJSON("start", drone.startLocation.toGeoJSONPointDouble());
+      binsList.add(startBin);
+    }
+    if (drone.jobOrigin != null) {
+      jobOriginBin      = Bin.asGeoJSON("jobOrigin",      drone.jobOrigin     .toGeoJSONPointDouble());
+      jobDestinationBin = Bin.asGeoJSON("jobDestination", drone.jobDestination.toGeoJSONPointDouble());
+      binsList.add(jobOriginBin);
+      binsList.add(jobDestinationBin);
+    }
+    Bin[] bins = binsList.toArray(new Bin[] {});
     try {
       ++Metering.dronePuts;
-      database.client.put(writePolicy, key, idBin, stateBin, locationBin, jobIdBin, exampleBin);
+      database.client.put(writePolicy, key, bins);
       return true;
     } catch (AerospikeException e) {
-      e.printStackTrace();
+      int resultCode = e.getResultCode();
+      System.err.format("put to %-6s %s %s\n", setName, ResultCode.getResultString(resultCode), e);
       return false;
+    }
+  }
+
+  private void putIntoCache(Drone drone) {
+    // id 1 goes into cache[0]
+    while (true) {
+      int index = drone.id - 1;
+      if (index < cache.size()) {
+        cache.set(index, drone);
+        break;
+      } else if (index == cache.size()) {
+        cache.add(drone);
+        break;
+      } else {
+        cache.add(null); // placeholder
+      }
     }
   }
 
@@ -171,17 +197,25 @@ public class AerospikeDrones extends Drones {
   }
 
   private Drone get(Key key, Record record) {
-    int id = record.getInt("id");
-    Drone.State state = Drone.State.stateForName(record.getValue("state"));
-    Location location = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("location"));
-    int jobId         = record.getInt("jobID");
-    boolean isExample = record.getBoolean("example");
-    Drone drone = new Drone(AerospikeDrones.this,
+    int         id             = record.getInt                                        ("id");
+    Drone.State state          = Drone.State.stateForName(record.getValue             ("state"));
+    Location    location       = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("location"));
+    int         jobId          = record.getInt                                        ("jobID");
+    boolean     isExample      = record.getBoolean                                    ("example");
+    double      radius         = record.getDouble                                     ("radius");
+    Location    startLocation  = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("start"));
+    Location    jobOrigin      = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("jobOrigin"));
+    Location    jobDestination = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("jobDestination"));
+    Drone drone = new Drone(this,
         id,
         state,
         location,
         jobId,
-        isExample
+        isExample,
+        radius,
+        startLocation,
+        jobOrigin,
+        jobDestination
     );
     return drone;
   }

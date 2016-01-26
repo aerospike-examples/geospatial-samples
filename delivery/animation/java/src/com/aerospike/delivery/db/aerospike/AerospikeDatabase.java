@@ -3,12 +3,14 @@ package com.aerospike.delivery.db.aerospike;
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.ClientPolicy;
+import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.ScanPolicy;
+import com.aerospike.client.query.IndexType;
+import com.aerospike.client.task.IndexTask;
 import com.aerospike.delivery.*;
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.util.OurExecutor;
 import org.apache.commons.cli.CommandLine;
-import org.apache.log4j.Logger;
 
 public class AerospikeDatabase extends Database {
 
@@ -16,14 +18,12 @@ public class AerospikeDatabase extends Database {
   public String namespace;
   AerospikeClient client;
   private final ClientPolicy clientPolicy;
-  final Logger log;
 
 
   public AerospikeDatabase() {
     namespace = "test"; //default
     clientPolicy = new ClientPolicy();
     clientPolicy.failIfNotConnected = true;
-    log = Logger.getLogger(AerospikeDatabase.class);
   }
 
   public boolean parseOptions(CommandLine commandLine) {
@@ -79,7 +79,6 @@ public class AerospikeDatabase extends Database {
   }
 
   //----------------------------------------------------------------------------------
-  // Specific to this subclass
 
   void clearSet(String setName) {
     ScanPolicy scanPolicy = new ScanPolicy();
@@ -91,11 +90,10 @@ public class AerospikeDatabase extends Database {
        */
       ClearScanCallback callback = new ClearScanCallback();
       client.scanAll(scanPolicy, namespace, setName, callback);
-      log.info("Deleted " + callback.count + " records from set " + setName);
+      System.out.println("Deleted " + callback.count + " records from set " + setName);
     } catch (AerospikeException e) {
       int resultCode = e.getResultCode();
-      log.info(ResultCode.getResultString(resultCode));
-      log.debug("Error details: ", e);
+      System.err.format("scanAll to clear set: %s %s %s\n", setName, ResultCode.getResultString(resultCode), e);
     }
   }
 
@@ -103,13 +101,14 @@ public class AerospikeDatabase extends Database {
   class ClearScanCallback implements ScanCallback {
     int count;
 
-    public void scanCallback(Key key, Record record) throws AerospikeException {
-      client.delete(null, key);
-      count++;
-      // After 25,000 records delete, return print the count.
-      if (count % 25000 == 0) {
-        log.info("Deleted " + count);
+    public void scanCallback(Key key, Record record) {
+      try {
+        client.delete(null, key);
+      } catch (AerospikeException e) {
+        int resultCode = e.getResultCode();
+        System.err.format("delete %s %s\n", ResultCode.getResultString(resultCode), e);
       }
+      count++;
     }
   }
 

@@ -3,8 +3,10 @@ package com.aerospike.delivery.db.aerospike;
 import com.aerospike.client.*;
 import com.aerospike.client.policy.*;
 import com.aerospike.client.query.Filter;
+import com.aerospike.client.query.IndexType;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
+import com.aerospike.client.task.IndexTask;
 import com.aerospike.delivery.*;
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Jobs;
@@ -40,6 +42,7 @@ public class AerospikeJobs extends Jobs {
     setName = "jobs";
     renderCache = new ConcurrentHashMap<>();
     jobsOnHoldCache = ConcurrentHashMap.newKeySet();
+//    createIndex();
   }
 
   //-----------------------------------------------------------------------------------
@@ -52,6 +55,22 @@ public class AerospikeJobs extends Jobs {
 
   //-----------------------------------------------------------------------------------
 
+  // Doesn't complain if index is already there.
+  private void createIndex() {
+    Policy policy = new Policy();
+    policy.timeout = 0; // Do not timeout on index create.
+    String binName   = "Waiting";
+    String indexName = "jobLocations";
+    try {
+      IndexTask task = database.client.createIndex(policy, database.namespace, setName, indexName, binName, IndexType.GEO2DSPHERE);
+      task.waitTillComplete();
+    } catch (AerospikeException e) {
+      e.printStackTrace();
+    }
+  }
+
+  //-----------------------------------------------------------------------------------
+
   @Override
   public Job newJob(Job.State state) {
     incrementSize();
@@ -61,7 +80,7 @@ public class AerospikeJobs extends Jobs {
       return true;
     });
     if (!success) {
-      database.log.error(String.format("unable to put new job."));
+      System.err.println("unable to put new job.");
     }
     return job;
   }
@@ -181,8 +200,7 @@ public class AerospikeJobs extends Jobs {
       }
     } catch (AerospikeException e) {
       int resultCode = e.getResultCode();
-      database.log.info(ResultCode.getResultString(resultCode));
-      database.log.debug("Error details: ", e);
+      System.err.format("scanAll of %-6s %s %s\n", setName, ResultCode.getResultString(resultCode), e);
     }
   }
 
@@ -194,7 +212,7 @@ public class AerospikeJobs extends Jobs {
       this.action = action;
     }
 
-    public void scanCallback(Key key, Record record) throws AerospikeException {
+    public void scanCallback(Key key, Record record) {
       // todo Should we get them in batches?
       ++Metering.jobScanResults;
       Job job = get(key, record);
@@ -225,8 +243,7 @@ public class AerospikeJobs extends Jobs {
           }
         } catch (AerospikeException e) {
           int resultCode = e.getResultCode();
-          database.log.info(ResultCode.getResultString(resultCode));
-          database.log.debug("Error details: ", e);
+          System.err.format("scanAll of %-6s %s %s\n", setName, ResultCode.getResultString(resultCode), e);
         }
         result.add(Job.NullJob);
       }
@@ -239,7 +256,7 @@ public class AerospikeJobs extends Jobs {
           this.queue = queue;
         }
 
-        public void scanCallback(Key key, Record record) throws AerospikeException {
+        public void scanCallback(Key key, Record record) {
           // todo Should we get them in batches?
           ++Metering.jobScanResults;
           Job job = get(key, record);
@@ -251,6 +268,17 @@ public class AerospikeJobs extends Jobs {
     return result;
   }
 
+
+  public BlockingQueue<Job> makeQueueForRenderingWithGet() {
+    final BlockingQueue<Job> result = new LinkedBlockingQueue<>();
+    OurExecutor.executor.execute(new Runnable() {
+      @Override
+      public void run() {
+
+      }
+    });
+    return result;
+  }
 
   //----------------------------------------------------------------------------------------
 
@@ -299,24 +327,26 @@ public class AerospikeJobs extends Jobs {
     Database.assertWriteLocked(job.lock);
     Key key = new Key(database.namespace, setName, job.id);
     String originBinName = job.state.name(); // location is stored in a bin by this name
-    Bin idBin          = new Bin("id",        job.id);
-    Bin stateBin       = new Bin("state",     originBinName);
-    Bin originBin      =     Bin.asGeoJSON(originBinName,   job.getOrigin()     .toGeoJSONPointDouble());
-    Bin destinationBin =     Bin.asGeoJSON("destination",   job.getDestination().toGeoJSONPointDouble());
-    Bin locationBin    =     Bin.asGeoJSON("location",      job.getLocation()   .toGeoJSONPointDouble());
-    Bin candidateBin   = new Bin("candidate", job.isCandidate());
-    Bin droneIdBin    = new Bin("droneid",  job.droneid);
+    Bin idBin           = new Bin("id",        job.id);
+    Bin stateBin        = new Bin("state",     originBinName);
+    Bin originBin       =     Bin.asGeoJSON(originBinName,   job.getOrigin()     .toGeoJSONPointDouble());
+    Bin destinationBin  =     Bin.asGeoJSON("destination",   job.getDestination().toGeoJSONPointDouble());
+    Bin locationBin     =     Bin.asGeoJSON("location",      job.getLocation()   .toGeoJSONPointDouble());
+    Bin prevLocationBin =     Bin.asGeoJSON("previous",      job.previousLocation.toGeoJSONPointDouble());
+    Bin isCandidateBin    = new Bin("candidate", job.isCandidate());
+    Bin droneIdBin      = new Bin("droneid",  job.droneid);
 //    System.out.printf("put %s\n", job);
     WritePolicy writePolicy = makePutWritePolicy(job);
     try {
       ++Metering.jobPuts;
-      database.client.put(writePolicy, key, idBin, stateBin, originBin, destinationBin, locationBin, candidateBin, droneIdBin);
+      database.client.put(writePolicy, key, idBin, stateBin, originBin, destinationBin, locationBin, prevLocationBin, isCandidateBin, droneIdBin);
       ++((Metadata)job.metadata).generation;
 //      database.log.info(String.format("changed %s to %s %s %d", ((Metadata)job.metadata).previousState, job.state, job, ((Metadata)job.metadata).generation));
       return true;
     } catch (AerospikeException e) {
-      if (e.getResultCode() != ResultCode.GENERATION_ERROR) {
-        e.printStackTrace();
+      int resultCode = e.getResultCode();
+      if (resultCode != ResultCode.GENERATION_ERROR) {
+        System.err.format("put to %-6s %s %s\n", setName, ResultCode.getResultString(resultCode), e);
       } else {
         // This happens a lot more than seems reasonable.
 //        database.log.info(String.format("failed  %s to %s %s %d", ((Metadata)job.metadata).previousState, job.state, job, ((Metadata)job.metadata).generation));
@@ -356,18 +386,20 @@ public class AerospikeJobs extends Jobs {
     Metadata metadata = new Metadata();
     metadata.generation = record.generation;
     int id = record.getInt("id");
-    Location origin      = Location.makeFromGeoJSONPointDouble(record.getGeoJSON(locationBinName));
-    Location destination = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("destination"));
-    Location location    = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("location"));
+    Location origin       = Location.makeFromGeoJSONPointDouble(record.getGeoJSON(locationBinName));
+    Location destination  = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("destination"));
+    Location location     = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("location"));
+    Location prevLocation = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("previous"));
     int droneId = record.getInt("droneId");
     boolean isCandidate = record.getBoolean("candidate");
-    Job job = new Job(AerospikeJobs.this,
+    Job job = new Job(this,
         metadata,
         id,
         state,
         origin,
         destination,
         location,
+        prevLocation,
         droneId,
         isCandidate
     );

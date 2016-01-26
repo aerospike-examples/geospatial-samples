@@ -1,13 +1,11 @@
 package com.aerospike.delivery.swing;
 
 import com.aerospike.delivery.*;
-import com.aerospike.delivery.db.aerospike.AerospikeDatabase;
 import com.aerospike.delivery.db.aerospike.AerospikeDrones;
 import com.aerospike.delivery.db.aerospike.AerospikeJobs;
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Drones;
 import com.aerospike.delivery.db.base.Jobs;
-import com.aerospike.delivery.db.inmemory.InMemoryDrones;
 import com.aerospike.delivery.util.OurExecutor;
 
 import java.awt.image.DataBufferInt;
@@ -172,10 +170,11 @@ public class Renderer {
     Color circleFill = new Color(93, 93, 93, 128);
     Color circleLine = new Color(133, 133, 133);
 
-    Color defaultJob = new Color(255, 170, 0);
-    Color candidateJob = new Color(220, 0, 255);
+    Color defaultJob    = new Color(255, 170, 0);
+    Color candidateJob  = new Color(220, 0, 255);
     Color deliveringJob = candidateJob;
-    Color onHoldJob = new Color(212, 0, 255);
+    Color onHoldJob     = new Color(212, 0, 255);
+    Color jobTail       = new Color(0, 185, 255);
 
     final Color defaultDrone = new Color(119, 201, 255);
     final Color exampleDrone = defaultDrone;
@@ -189,6 +188,7 @@ public class Renderer {
   private void draw(BlockingQueue<Job> jobsToDraw, BlockingQueue<Drone> dronesToDraw) throws InterruptedException {
 //      System.out.println("drawStuff " + ++count);
     Graphics2D g2 = prepareToDraw();
+    drawTheBackground(g2);
     drawTheLayers(jobsToDraw, dronesToDraw, g2);
     g2.dispose();
   }
@@ -206,10 +206,13 @@ public class Renderer {
     return g2;
   }
 
-  private void drawTheLayers(BlockingQueue<Job> jobsToDraw, BlockingQueue<Drone> dronesToDraw, Graphics2D g2) throws InterruptedException {
-    // layered from back to front
+  private void drawTheBackground(Graphics2D g2) {
     g2.setColor(colors.background);
     g2.fillRect(0, 0, width, height);
+  }
+
+  private void drawTheLayers(BlockingQueue<Job> jobsToDraw, BlockingQueue<Drone> dronesToDraw, Graphics2D g2) throws InterruptedException {
+    // layered from back to front
     // Longitude increases leftwards. Latitude increases upwards.
     g2.translate(-Database.mapWidthPx / 2, -Database.mapHeightPx / 2);
     drawRegions(g2);
@@ -253,10 +256,10 @@ public class Renderer {
           case GotAJob:
           case Departing:
           case EnRoute:
+          case ArrivedAtJob:
             drawSearchCircle(g, drone);
             drawPath(g, drone);
             break;
-          case ArrivedAtJob:
           case Delivering:
           case Delivered:
             drawPath(g, drone);
@@ -305,24 +308,15 @@ public class Renderer {
 
   private void drawPath(Graphics2D g, Drone drone) {
     Location start = drone.startLocation;
-    Job job = database.getJobs().getJobWhereIdIs(drone.jobId);
-    if (job == null) {
-      System.out.println("drawPath drone id " + drone.id);
-    } else {
-      Location begin = job.getOrigin();
-      Location end   = job.getDestination();
-      int xStart = transformX(start.x);
-      int yStart = transformY(start.y);
-      int xBegin = transformX(begin.x);
-      int yBegin = transformY(begin.y);
-      int xEnd = transformX(end.x);
-      int yEnd = transformY(end.y);
+    if (drone.jobOrigin != null) {
+      Location begin = drone.jobOrigin;
+      Location end   = drone.jobDestination;
       g.setStroke(new BasicStroke(3));
       g.setColor(colors.enroutePath);
-      g.drawLine(xStart, yStart, xBegin, yBegin);
+      drawLine(g, start, begin);
       g.setStroke(new BasicStroke(3));
       g.setColor(colors.deliveringPath);
-      g.drawLine(xBegin, yBegin, xEnd, yEnd);
+      drawLine(g, begin, end);
     }
   }
 
@@ -359,23 +353,24 @@ public class Renderer {
           } else {
             color = colors.defaultJob;
           }
-          drawJob(g, job, job.getLocation(), color, null);
+          drawJob(g, job, color, null);
           break;
         }
         case InProcess:
 //              System.out.println("InProcess " + job);
-          drawJob(g, job, job.getLocation(), colors.defaultJob, colors.deliveringJob);
+          drawJob(g, job, colors.defaultJob, colors.deliveringJob);
           break;
         case OnHold:
-          drawJob(g, job, job.getLocation(), colors.onHoldJob, null);
+          drawJob(g, job, colors.onHoldJob, null);
           break;
       }
     }
   }
 
-  private synchronized void drawJob(Graphics2D g, Job job, Location location, Color jobColor, Color highlightColor) {
+  private synchronized void drawJob(Graphics2D g, Job job, Color jobColor, Color highlightColor) {
     final int r = 6;
     final int r2 = r / 2;
+    Location location = job.getLocation();
     int x = transformX(location.x);
     int y = transformY(location.y);
     g.setStroke(new BasicStroke(1));
@@ -385,11 +380,23 @@ public class Renderer {
       g.setColor(highlightColor);
       g.drawRect(x - r2, y - r2, r, r);
     }
+    if (!location.equals(job.previousLocation)) {
+      g.setColor(colors.jobTail);
+      drawLine(g, job.previousLocation, location);
+    }
     if (isDrawingJobNumbers) {
       g.setFont(new Font(null, Font.PLAIN, 8));
       g.setColor(Color.lightGray);
       g.drawString(String.format("%d", job.id), x + 5, y + 4);
     }
+  }
+
+  private void drawLine(Graphics2D g, Location begin, Location end) {
+    int xStart = transformX(begin.x);
+    int yStart = transformY(begin.y);
+    int xBegin = transformX(end.x);
+    int yBegin = transformY(end.y);
+    g.drawLine(xStart, yStart, xBegin, yBegin);
   }
 
   //==================================================================================================================
@@ -491,7 +498,7 @@ public class Renderer {
   public static void main(String[] args) {
     OurOptions options = new OurOptions();
     options.doCommandLineOptions("render-test", args);
-    AerospikeJobs   jobs   = (AerospikeJobs)    options.database.getJobs();
+    AerospikeJobs   jobs   = (AerospikeJobs)   options.database.getJobs();
     AerospikeDrones drones = (AerospikeDrones) options.database.getDrones();
     if (options.database.connect()) {
       try {
