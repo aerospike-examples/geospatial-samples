@@ -2,6 +2,7 @@ package com.aerospike.delivery;
 
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Jobs;
+import com.aerospike.delivery.swing.Renderer;
 import com.aerospike.delivery.swing.Window;
 import com.aerospike.delivery.util.DebuggingCountDownLatch;
 import com.aerospike.delivery.util.OurExecutor;
@@ -75,8 +76,8 @@ public class App {
         options.database.clear();
         // Fall through.
       case Observe:
-        Window.createWindow(options.database);
-        Window.instance().renderingPanel.renderer.start();
+        Renderer renderer = Window.createWindow(options.database);
+        renderer.start();
         delayMs(1000);
         break;
       case Headless:
@@ -115,17 +116,24 @@ public class App {
   //-----------------------------------------------------------------------------------
 
   private static void doTheAnimation() throws InterruptedException {
-    options.database.getJobs().addMore(backlogExcess(1));
+    delayMs(1000);
 
-    int pauseMs = 2000;
-    int durationNs = 20_000_000;
+    int nbJobsToStart = backlogExcess(1);
+    for (int i = 0; i < nbJobsToStart; ++i) {
+      Job job = options.database.getJobs().newJob(Job.State.Waiting);
+      Thread.sleep(67);
+    }
+
+    int pauseMs = 1000;
 
     if (options.isShowingTutorial) {
-      activateAndWait(1, 1, options.nbTrips, durationNs, true);
+      activateAndWait(1, 1, options.nbTrips, 0, true);
       if (options.isRunningBenchmark) {
-        delayMs(pauseMs * 2);
+        delayMs(pauseMs * 1);
       }
     }
+
+    int durationNs = 20_000_000;
 
     if (options.isRunningBenchmark) {
       slowdownFactor = benchmarkSlowdownFactor;

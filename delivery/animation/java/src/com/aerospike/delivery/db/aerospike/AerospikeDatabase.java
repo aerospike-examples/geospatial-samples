@@ -3,10 +3,7 @@ package com.aerospike.delivery.db.aerospike;
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.ClientPolicy;
-import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.ScanPolicy;
-import com.aerospike.client.query.IndexType;
-import com.aerospike.client.task.IndexTask;
 import com.aerospike.delivery.*;
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.util.OurExecutor;
@@ -44,7 +41,7 @@ public class AerospikeDatabase extends Database {
     if (client.isConnected()) {
       drones = new AerospikeDrones(this);
       jobs = new AerospikeJobs(this);
-      new Thread(new Metering()).start();
+      OurExecutor.executor.submit(Metering.newInstance());
       return true;
     } else {
       return false;
@@ -89,7 +86,7 @@ public class AerospikeDatabase extends Database {
        * in the cluster and return the record Digest to the call back object
        */
       ClearScanCallback callback = new ClearScanCallback();
-      client.scanAll(scanPolicy, namespace, setName, callback);
+      scanAllWorkaround(scanPolicy, namespace, setName, callback);
       System.out.println("Deleted " + callback.count + " records from set " + setName);
     } catch (AerospikeException e) {
       int resultCode = e.getResultCode();
@@ -110,6 +107,30 @@ public class AerospikeDatabase extends Database {
       }
       count++;
     }
+  }
+
+  // ------------------------------------------------------------------------------------------------
+
+  private volatile static long previousScanAllTime;
+
+  // This app does something very unusual that hits a bug in the Java 3.1.8 client.
+  // We do two scanAll calls very close together, causing their transaction IDs collide.
+  public final void scanAllWorkaround(ScanPolicy policy, String namespace, String setName, ScanCallback callback, String... bins)
+      throws AerospikeException {
+    while (true) {
+      try {
+        client.scanAll(policy, namespace, setName, callback, bins);
+        break;
+      } catch (AerospikeException e) {
+        int resultCode = e.getResultCode();
+//        System.err.format("Retrying scanAll of %-6s %s %s\n", setName, ResultCode.getResultString(resultCode), e);
+        if (resultCode != ResultCode.PARAMETER_ERROR) {
+          throw e;
+        }
+        continue; // Keep trying until we're past the client library bug with transaction ID.
+      }
+    }
+    return;
   }
 
   // ------------------------------------------------------------------------------------------------

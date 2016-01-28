@@ -196,7 +196,7 @@ public class AerospikeJobs extends Jobs {
        */
       ++Metering.jobScans;
       if (database.client.isConnected()) {
-        database.client.scanAll(scanPolicy, database.namespace, setName, new ForeachScanCallback(action));
+        database.scanAllWorkaround(scanPolicy, database.namespace, setName, new ForeachScanCallback(action));
       }
     } catch (AerospikeException e) {
       int resultCode = e.getResultCode();
@@ -239,7 +239,7 @@ public class AerospikeJobs extends Jobs {
            */
           ++Metering.jobScans;
           if (database.client.isConnected()) {
-            database.client.scanAll(scanPolicy, database.namespace, setName, new RefreshRenderCacheScanCallback(result));
+            database.scanAllWorkaround(scanPolicy, database.namespace, setName, new RefreshRenderCacheScanCallback(result));
           }
         } catch (AerospikeException e) {
           int resultCode = e.getResultCode();

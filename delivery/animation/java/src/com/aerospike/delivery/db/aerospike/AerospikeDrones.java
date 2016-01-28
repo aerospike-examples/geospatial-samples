@@ -96,7 +96,7 @@ public class AerospikeDrones extends Drones {
        */
           if (database.client.isConnected()) {
             ++Metering.droneScans;
-            database.client.scanAll(scanPolicy, database.namespace, setName, new OurScanCallback(result));
+            database.scanAllWorkaround(scanPolicy, database.namespace, setName, new OurScanCallback(result));
           }
         } catch (AerospikeException e) {
           int resultCode = e.getResultCode();

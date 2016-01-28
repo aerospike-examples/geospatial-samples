@@ -13,23 +13,33 @@ public class Metering implements Runnable {
   public static volatile int dronePuts;
   public static volatile int droneGets;
 
+  public static Metering instance;
   final int nbSeconds = 3;
+  public volatile long renders;
 
-    @Override
-    public void run() {
-      long time = System.currentTimeMillis();
-      while (true) {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime > time + nbSeconds * 1000) {
-          printJobStats();
-          printDroneStats();
-          time = currentTime;
-        }
+
+  public static Metering newInstance() {
+    instance = new com.aerospike.delivery.Metering();
+    return instance;
+  }
+
+  @Override
+  public void run() {
+    while (true) {
+      printJobStats();
+      printDroneStats();
+      try {
+        Thread.sleep(nbSeconds * 1000);
+      } catch (InterruptedException e) {
+        break;
       }
     }
+    System.out.println("Metering stopped.");
+  }
 
   private void printJobStats() {
-    System.out.format("jobs: circle %3d:%4d   puts %4d   gets %2d   scans %2d:%4d\n",
+    System.out.format("%d jobs: circle %3d:%4d   puts %4d   gets %2d   scans %2d:%4d\n",
+        renders,
         jobQueryWithinRadius / nbSeconds,
         jobRadiusResults     / nbSeconds,
         jobPuts              / nbSeconds,
@@ -46,7 +56,8 @@ public class Metering implements Runnable {
   }
 
   private void printDroneStats() {
-    System.out.format("drones:                 puts %4d   gets %2d   scans %2d:%4d\n",
+    System.out.format("%d drones:                 puts %4d   gets %2d   scans %2d:%4d\n",
+        renders,
         dronePuts              / nbSeconds,
         droneGets              / nbSeconds,
         droneScans             / nbSeconds,

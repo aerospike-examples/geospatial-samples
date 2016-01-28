@@ -6,6 +6,7 @@ import com.aerospike.delivery.db.aerospike.AerospikeJobs;
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Drones;
 import com.aerospike.delivery.db.base.Jobs;
+//import com.aerospike.delivery.javafx.Controller;
 import com.aerospike.delivery.util.OurExecutor;
 
 import java.awt.image.DataBufferInt;
@@ -37,7 +38,6 @@ public class Renderer {
   private final BufferedImage bufferedImage;
   private final JComponentWithBufferedImage destinationComponent;
   private boolean isDrawingJobNumbers;
-  private boolean isStopping;
 
   public Renderer(Database database, int width, int height, JComponentWithBufferedImage destinationComponent) {
     super();
@@ -55,23 +55,17 @@ public class Renderer {
 
 
   public void start() {
-    {
-      Thread drawThread = new Thread(new DrawingTask());
-      drawThread.setName("Renderer");
-      drawThread.start();
-    }
+    OurExecutor.executor.submit(new DrawingTask());
   }
 
 
-  public void stop() {
-    isStopping = true;
-  }
-
+  private boolean doingStatsUpdate;
 
   class DrawingTask implements Runnable {
 
     private Runnable imageCopier = new ImageCopier();
     long drawingStartTime;
+    private long lastStatsUpdateTime;
 
     public DrawingTask() {
       super();
@@ -83,8 +77,11 @@ public class Renderer {
     @Override
     public void run() {
       drawingStartTime = System.nanoTime();
-      while (!isStopping) {
-        if (!render()) break;
+      while (true) {
+        ++Metering.instance.renders;
+        determineIfTimeToUpdateStats();
+        if (!render()) break; // interrupted
+        deliverStats();
         long delayArg = calculateDelayUntilNextFrame();
         if (delayArg > 0) {
           // If we're lucky and drawing is quick enough
@@ -96,6 +93,18 @@ public class Renderer {
 //          double rate = 1 / seconds;
 //          System.out.format("rendering rate %.1ffps\n", rate);
         }
+      }
+      System.out.println("Rendering stopped.");
+    }
+
+    private void determineIfTimeToUpdateStats() {
+      long currentTime = System.currentTimeMillis();
+      long timeTaken   = currentTime - lastStatsUpdateTime;
+      if (timeTaken > 1000) {
+        doingStatsUpdate = true;
+        lastStatsUpdateTime = currentTime;
+      } else {
+        doingStatsUpdate = false;
       }
     }
 
@@ -115,7 +124,6 @@ public class Renderer {
           draw(jobsToDraw, dronesToDraw);
           SwingUtilities.invokeAndWait(imageCopier);
         } catch (Exception e) {
-          e.printStackTrace(); // todo
           return false;
         }
       }
@@ -124,12 +132,20 @@ public class Renderer {
 
   }
 
+  private void deliverStats() {
+//    if (doingStatsUpdate && Controller.instance != null) {
+//      Controller.instance.setJobStats(jobStats);
+//      jobStats = new JobStats();
+//      Controller.instance.setDroneStats(droneStats);
+//      droneStats = new DroneStats();
+//    }
+  }
+
   static boolean delayNs(long durationNs) {
     long ms = durationNs / 1000000;
     try {
       Thread.sleep(ms, (int) (durationNs % 1000000));
     } catch (InterruptedException e) {
-      e.printStackTrace();
       return false;
     }
     return true;
@@ -340,7 +356,7 @@ public class Renderer {
       if (job == Job.NullJob) {
         break;
       }
-      // When the database is Aerospike, this runs in one of many client threads.
+      updateJobStats(job);
       switch (job.getState()) {
         default:
           throw new Error("unhandled job state");
@@ -399,6 +415,34 @@ public class Renderer {
     g.drawLine(xStart, yStart, xBegin, yBegin);
   }
 
+  JobStats jobStats = new JobStats();
+
+  public static class JobStats {
+    public int waiting;
+    public int delivering;
+    public int onHold;
+  }
+
+  private void updateJobStats(Job job) {
+    if (doingStatsUpdate) {
+      switch (job.state) {
+        default:
+          throw new Error("unhandled job state");
+        case Init:
+          break;
+        case Waiting:
+          ++jobStats.waiting;
+          break;
+        case InProcess:
+          ++jobStats.delivering;
+          break;
+        case OnHold:
+          ++jobStats.onHold;
+          break;
+      }
+    }
+  }
+
   //==================================================================================================================
 
 
@@ -418,7 +462,7 @@ public class Renderer {
       if (drone == Drone.NullDrone) {
         break;
       }
-      // When the database is Aerospike, this runs in one of many client threads.
+      updateDroneStats(drone);
       if (drone.hasJob()) {
         switch (drone.state) {
           default:
@@ -523,7 +567,6 @@ public class Renderer {
         renderer.start();
 
         Thread.sleep(99999999);
-        renderer.stop();
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -545,6 +588,47 @@ public class Renderer {
   private static void getAndPrintDrone(Drones drones, int id) {
     Drone drone = drones.getDroneWhereIdIs(id);
     System.out.printf("got drone %s\n", drone);
+  }
+
+
+  public static class DroneStats {
+    public int ready;
+    public int enroute;
+    public int delivering;
+    public int done;
+    public int offDuty;
+  }
+
+  DroneStats droneStats = new DroneStats();
+
+  private void updateDroneStats(Drone drone) {
+    if (doingStatsUpdate) {
+      switch (drone.state) {
+        default:
+          throw new Error("unhandled drone state");
+        case Init:
+          break;
+        case Ready:
+          ++droneStats.ready;
+          break;
+        case GotAJob:
+        case Departing:
+        case EnRoute:
+          ++droneStats.enroute;
+          break;
+        case ArrivedAtJob:
+        case Delivering:
+          ++droneStats.delivering;
+          break;
+        case Delivered:
+        case Done:
+          ++droneStats.done;
+          break;
+        case OffDuty:
+          ++droneStats.offDuty;
+          break;
+      }
+    }
   }
 
   private static class MyJPanel extends JPanel implements JComponentWithBufferedImage {

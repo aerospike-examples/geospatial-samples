@@ -5,6 +5,8 @@ import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Drones;
 import com.aerospike.delivery.db.base.Jobs;
 import com.aerospike.delivery.util.OurExecutor;
+import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -236,11 +238,11 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
             if (stillInMotion(job.getDestination())) {
               return;
             }
+            job.previousLocation = job.getLocation();
             if (delayAndThen(deliveredDelay(), State.Delivered))
               return; else continue;
           case Delivered:
             setState(State.Done);
-            job.previousLocation = job.getLocation();
             continue;
           case Done:
             if (willGoOffDuty && (isExample || id == FirstID)) {
@@ -283,6 +285,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
       ; // ignore
     }
   }
+
 
   // For debugging, but performance is terrible if false!
   boolean isSchedulingInsteadOfDelaying = true;
