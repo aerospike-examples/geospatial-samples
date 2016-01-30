@@ -1,10 +1,7 @@
 package com.aerospike.delivery.db.base;
 
 
-import com.aerospike.delivery.App;
-import com.aerospike.delivery.Job;
-import com.aerospike.delivery.Location;
-import com.aerospike.delivery.OurOptions;
+import com.aerospike.delivery.*;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
@@ -75,7 +72,7 @@ public abstract class Jobs {
   private void ensureEnoughJobs() {
     int nbDrones = OurOptions.instance.database.getDrones().size();
     int nbWaiting = size(Job.State.Waiting);
-    int count = App.backlogExcess(nbDrones) - nbWaiting;
+    int count = Animation.backlogExcess(nbDrones) - nbWaiting;
     if (count > 0) {
       addMore(count);
     }

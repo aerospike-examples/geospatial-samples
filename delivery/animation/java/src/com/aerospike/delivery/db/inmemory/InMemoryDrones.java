@@ -87,7 +87,7 @@ public class InMemoryDrones extends Drones {
   @Override
   public BlockingQueue<Drone> makeQueueForRendering() {
     BlockingQueue<Drone> result = new LinkedBlockingQueue<>();
-    OurExecutor.executor.execute(() -> {
+    OurExecutor.instance.execute(() -> {
       try {
         Collection<Drone> values = contents.values();
         synchronized (contents) {

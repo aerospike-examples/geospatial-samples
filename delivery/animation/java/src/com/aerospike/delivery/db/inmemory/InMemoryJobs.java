@@ -99,7 +99,7 @@ public class InMemoryJobs extends Jobs {
     // todo Is there something that that takes a sequence of collections and returns an iterable?
     // That would be better.
     BlockingQueue<Job> result = new LinkedBlockingQueue<>();
-    OurExecutor.executor.execute(() -> {
+    OurExecutor.instance.execute(() -> {
       try {
         result.addAll(jobsWaiting.values());
         result.addAll(jobsInProcess.values());

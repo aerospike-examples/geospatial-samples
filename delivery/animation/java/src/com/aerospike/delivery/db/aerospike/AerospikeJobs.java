@@ -228,7 +228,7 @@ public class AerospikeJobs extends Jobs {
   @Override
   public BlockingQueue<Job> makeQueueForRendering() {
     final BlockingQueue<Job> result = new LinkedBlockingQueue<>();
-    OurExecutor.executor.execute(new Runnable() {
+    OurExecutor.instance.execute(new Runnable() {
       @Override
       public void run() {
         ScanPolicy scanPolicy = new ScanPolicy();
@@ -271,7 +271,7 @@ public class AerospikeJobs extends Jobs {
 
   public BlockingQueue<Job> makeQueueForRenderingWithGet() {
     final BlockingQueue<Job> result = new LinkedBlockingQueue<>();
-    OurExecutor.executor.execute(new Runnable() {
+    OurExecutor.instance.execute(new Runnable() {
       @Override
       public void run() {
 

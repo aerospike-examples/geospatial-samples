@@ -6,11 +6,11 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class OurExecutor {
 
   private static int ncores = Runtime.getRuntime().availableProcessors();
-  public static final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(ncores);
+  public static final ScheduledThreadPoolExecutor instance = new ScheduledThreadPoolExecutor(ncores);
 
   static {
-    OurExecutor.executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-    OurExecutor.executor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
+    OurExecutor.instance.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+    OurExecutor.instance.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
   }
 
 }

@@ -13,7 +13,7 @@ public class AerospikeDatabase extends Database {
 
   private Parameters parameters;
   public String namespace;
-  AerospikeClient client;
+  public AerospikeClient client;
   private final ClientPolicy clientPolicy;
 
 
@@ -41,7 +41,6 @@ public class AerospikeDatabase extends Database {
     if (client.isConnected()) {
       drones = new AerospikeDrones(this);
       jobs = new AerospikeJobs(this);
-      OurExecutor.executor.submit(Metering.newInstance());
       return true;
     } else {
       return false;
@@ -165,7 +164,7 @@ public class AerospikeDatabase extends Database {
     } else {
       System.err.println("Couldn't connect.");
     }
-    OurExecutor.executor.shutdownNow();
+    OurExecutor.instance.shutdownNow();
   }
 
   private static void getAndPrintJob(AerospikeJobs jobs, int id) {

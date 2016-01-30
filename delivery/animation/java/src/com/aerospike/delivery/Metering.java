@@ -1,6 +1,13 @@
 package com.aerospike.delivery;
 
+import com.aerospike.delivery.util.OurExecutor;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 public class Metering implements Runnable {
+
+  public static final Metering instance = new Metering();
 
   public static volatile int jobQueryWithinRadius;
   public static volatile int jobRadiusResults;
@@ -13,28 +20,28 @@ public class Metering implements Runnable {
   public static volatile int dronePuts;
   public static volatile int droneGets;
 
-  public static Metering instance;
   final int nbSeconds = 3;
   public volatile long renders;
+  private volatile Future future;
 
 
-  public static Metering newInstance() {
-    instance = new com.aerospike.delivery.Metering();
-    return instance;
+  public static void start() {
+    OurExecutor.instance.submit(Metering.instance);
+  }
+
+  public synchronized void stop() {
+    if (future != null) {
+      future.cancel(true);
+      future = null;
+    }
   }
 
   @Override
-  public void run() {
-    while (true) {
-      printJobStats();
-      printDroneStats();
-      try {
-        Thread.sleep(nbSeconds * 1000);
-      } catch (InterruptedException e) {
-        break;
-      }
-    }
-    System.out.println("Metering stopped.");
+  public synchronized void run() {
+    future = null;
+    printJobStats();
+    printDroneStats();
+    future = OurExecutor.instance.schedule(this, nbSeconds * 1000, TimeUnit.MILLISECONDS);
   }
 
   private void printJobStats() {

@@ -5,8 +5,6 @@ import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Drones;
 import com.aerospike.delivery.db.base.Jobs;
 import com.aerospike.delivery.util.OurExecutor;
-import javafx.fxml.FXML;
-import javafx.scene.control.Label;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -155,9 +153,9 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
 
   private long slowdownFactor(int delay) {
     if (isExample) {
-      return delay * App.slowdownFactorDefault;
+      return delay * Animation.slowdownFactorDefault;
     } else {
-      return delay * App.slowdownFactor();
+      return delay * Animation.slowdownFactor();
     }
   }
 
@@ -206,11 +204,11 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
             startLocation = getLocation(); // used for drawing
             if (stillLookingForJob()) {
               long delay = circleDelay();
-              future = OurExecutor.executor.schedule(this, isExample ? delay : 0, timeUnit);
+              future = OurExecutor.instance.schedule(this, isExample ? delay : 0, timeUnit);
               return;
             }
 //            System.out.println("- read " + this);
-            if (++nbTrips >= App.maxTripsPerDrone) {
+            if (++nbTrips >= Animation.maxTripsPerDrone) {
               willGoOffDuty = true;
             }
             if (delayAndThen(gotAJobDelay(), State.GotAJob))
@@ -246,9 +244,9 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
             continue;
           case Done:
             if (willGoOffDuty && (isExample || id == FirstID)) {
-              App.isLeadDroneStillRunning = false;
+              Animation.isLeadDroneStillRunning = false;
             }
-            if (willGoOffDuty && !App.isLeadDroneStillRunning) {
+            if (willGoOffDuty && !Animation.isLeadDroneStillRunning) {
 //              System.out.println("- off1 " + this);
               Database.withWriteLock(job.lock, () -> {
                 job.updateCoordinates();
@@ -276,7 +274,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
             setState(State.Init);
             currentRadius = 0;
 //            System.out.println("- off4 " + this);
-            App.activeDrones.countDown(this);
+            Animation.activeDrones.countDown(this);
             return;
         }
         throw new Error("Must not break from this switch.");
@@ -296,7 +294,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
       return false;
     }
     if (isSchedulingInsteadOfDelaying) {
-      future = OurExecutor.executor.schedule(this, delay, timeUnit);
+      future = OurExecutor.instance.schedule(this, delay, timeUnit);
       return true;
     } else {
       Thread.sleep(delay);
@@ -348,7 +346,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
       double thisSegment = Math.min(distanceToTarget, distancePerAnimationInterval);
       waypoint = getLocation().partWay(thisSegment, whereTo); // for next time
       double intervalPortion = thisSegment / distancePerAnimationInterval;
-      future = OurExecutor.executor.schedule(this, (long) (OurOptions.animationIntervalMs * intervalPortion), timeUnit);
+      future = OurExecutor.instance.schedule(this, (long) (OurOptions.animationIntervalMs * intervalPortion), timeUnit);
 //      System.out.format("%s %s %1.3f   %1.3f   %1.3f   %s\n", waypoint, getLocation(), distance, thisSegment, intervalPortion, waypoint);
       result = true;
     }

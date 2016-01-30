@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.embed.swing.SwingNode?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.aerospike.delivery.javafx.MainWindowController">
+   <top>
+      <VBox BorderPane.alignment="CENTER" />
+   </top>
+   <bottom>
+      <HBox BorderPane.alignment="CENTER" />
+   </bottom>
+   <center>
+      <VBox BorderPane.alignment="CENTER">
+         <StackPane fx:id="animationPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="800.0">
+            <children>
+            <SwingNode fx:id="animation" />
+            </children>
+         </StackPane>
+      </VBox>
+   </center>
+   <right>
+      <VBox>
+         <children>
+            <Pane prefHeight="40.0" prefWidth="120.0" />
+            <HBox alignment="CENTER" />
+            <GridPane>
+              <columnConstraints>
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+                <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" minWidth="10.0" />
+              </columnConstraints>
+              <rowConstraints>
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="20.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="20.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="20.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="20.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="20.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="16.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="16.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <Label alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="Ready" textAlignment="RIGHT" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label id="dronesReady" fx:id="dronesReady" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="17" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets right="6.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" contentDisplay="RIGHT" layoutX="36.0" layoutY="17.0" minWidth="-Infinity" text="Enroute" textAlignment="RIGHT" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="2">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="Delivering" textAlignment="RIGHT" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="3">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="Done" textAlignment="RIGHT" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="4">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="Off duty" textAlignment="RIGHT" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="5">
+                     <padding>
+                        <Insets right="6.0" />
+                     </padding>
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label id="dronesReady" fx:id="dronesEnroute" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="17" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="2">
+                     <GridPane.margin>
+                        <Insets right="6.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label id="dronesReady" fx:id="dronesDelivering" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="17" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="3">
+                     <GridPane.margin>
+                        <Insets right="6.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label id="dronesReady" fx:id="dronesDone" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="17" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="4">
+                     <GridPane.margin>
+                        <Insets right="6.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label id="dronesReady" fx:id="dronesOffDuty" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" prefWidth="33.0" text="17" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="5">
+                     <GridPane.margin>
+                        <Insets right="6.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label alignment="CENTER" contentDisplay="CENTER" text="Jobs" textAlignment="CENTER" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="7">
+                     <font>
+                        <Font size="19.0" />
+                     </font>
+                  </Label>
+                  <Label id="dronesReady" fx:id="jobsWaiting" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="17" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="8">
+                     <GridPane.margin>
+                        <Insets right="6.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label id="dronesReady" fx:id="jobsDelivering" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="17" textAlignment="RIGHT" GridPane.halignment="RIGHT" GridPane.rowIndex="9">
+                     <GridPane.margin>
+                        <Insets right="6.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="Waiting" textAlignment="RIGHT" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="8">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="-Infinity" text="Delivering" textAlignment="RIGHT" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="9">
+                     <GridPane.margin>
+                        <Insets right="10.0" />
+                     </GridPane.margin>
+                  </Label>
+                  <Label alignment="CENTER" contentDisplay="CENTER" text="Drones" textAlignment="CENTER" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER">
+                     <font>
+                        <Font size="19.0" />
+                     </font>
+                  </Label>
+               </children>
+               <padding>
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+               </padding>
+            </GridPane>
+         </children>
+      </VBox>
+   </right>
+</BorderPane>

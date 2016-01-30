@@ -85,7 +85,7 @@ public class AerospikeDrones extends Drones {
   @Override
   public BlockingQueue<Drone> makeQueueForRendering() {
     BlockingQueue<Drone> result = new LinkedBlockingQueue<>();
-    OurExecutor.executor.execute(new Runnable() {
+    OurExecutor.instance.execute(new Runnable() {
       @Override
       public void run() {
         ScanPolicy scanPolicy = new ScanPolicy();

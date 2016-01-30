@@ -6,7 +6,7 @@ import com.aerospike.delivery.db.aerospike.AerospikeJobs;
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Drones;
 import com.aerospike.delivery.db.base.Jobs;
-//import com.aerospike.delivery.javafx.Controller;
+import com.aerospike.delivery.javafx.MainWindowController;
 import com.aerospike.delivery.util.OurExecutor;
 
 import java.awt.image.DataBufferInt;
@@ -55,7 +55,7 @@ public class Renderer {
 
 
   public void start() {
-    OurExecutor.executor.submit(new DrawingTask());
+    OurExecutor.instance.submit(new DrawingTask());
   }
 
 
@@ -133,12 +133,12 @@ public class Renderer {
   }
 
   private void deliverStats() {
-//    if (doingStatsUpdate && Controller.instance != null) {
-//      Controller.instance.setJobStats(jobStats);
-//      jobStats = new JobStats();
-//      Controller.instance.setDroneStats(droneStats);
-//      droneStats = new DroneStats();
-//    }
+    if (doingStatsUpdate && MainWindowController.instance != null) {
+      MainWindowController.instance.setJobStats(jobStats);
+      jobStats = new JobStats();
+      MainWindowController.instance.setDroneStats(droneStats);
+      droneStats = new DroneStats();
+    }
   }
 
   static boolean delayNs(long durationNs) {
@@ -255,7 +255,7 @@ public class Renderer {
   //==================================================================================================================
 
   public void drawCirclesAndPath(Graphics2D g) {
-    if (!App.isDrawingCirclesAndLines) {
+    if (!Animation.isDrawingCirclesAndLines) {
       return;
     }
     for (int id = 1; ; ++id) {
@@ -558,7 +558,7 @@ public class Renderer {
         drone.isExample = true;
         getAndPrintDrone(drones, 1);
 
-        App.isDrawingCirclesAndLines = true;
+        Animation.isDrawingCirclesAndLines = true;
 
         int width = 800;
         int height = 800;
@@ -577,7 +577,7 @@ public class Renderer {
     } else {
       System.err.println("Couldn't connect.");
     }
-    OurExecutor.executor.shutdownNow();
+    OurExecutor.instance.shutdownNow();
   }
 
   private static void getAndPrintJob(Jobs jobs, int id) {
