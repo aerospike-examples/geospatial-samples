@@ -1,8 +1,7 @@
 package com.aerospike.delivery.swing;
 
 import com.aerospike.delivery.*;
-import com.aerospike.delivery.db.aerospike.AerospikeDrones;
-import com.aerospike.delivery.db.aerospike.AerospikeJobs;
+import com.aerospike.delivery.db.aerospike.Metering;
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Drones;
 import com.aerospike.delivery.db.base.Jobs;
@@ -195,9 +194,9 @@ public class Renderer {
     final Color defaultDrone = new Color(119, 201, 255);
     final Color exampleDrone = defaultDrone;
     final Color offDutyDrone = defaultDrone;
-    final Color readyDrone = defaultDrone;
+    final Color readyDrone   = defaultDrone;
 
-    final Color enroutePath = new Color(0, 153, 225);
+    final Color enroutePath    = new Color(0, 153, 225);
     final Color deliveringPath = defaultDrone;
   }
 
@@ -255,7 +254,7 @@ public class Renderer {
   //==================================================================================================================
 
   public void drawCirclesAndPath(Graphics2D g) {
-    if (!Animation.isDrawingCirclesAndLines) {
+    if (!Conductor.isDrawingCirclesAndLines) {
       return;
     }
     for (int id = 1; ; ++id) {
@@ -536,60 +535,6 @@ public class Renderer {
     return height / 2 + (int) -(positiveIsUp * Database.mapHeightPx);
   }
 
-  //--------------------------------------------------------------------------------------------------
-
-  // for testing
-  public static void main(String[] args) {
-    OurOptions options = new OurOptions();
-    options.doCommandLineOptions("render-test", args);
-    AerospikeJobs   jobs   = (AerospikeJobs)   options.database.getJobs();
-    AerospikeDrones drones = (AerospikeDrones) options.database.getDrones();
-    if (options.database.connect()) {
-      try {
-//        database.clear();
-        jobs.newJob(Job.State.Init);
-        jobs.newJob(Job.State.Init);
-        jobs.newJob(Job.State.Init);
-        getAndPrintJob(jobs, 1);
-        getAndPrintJob(jobs, 2);
-        getAndPrintJob(jobs, 3);
-
-        Drone drone = drones.newDrone();
-        drone.isExample = true;
-        getAndPrintDrone(drones, 1);
-
-        Animation.isDrawingCirclesAndLines = true;
-
-        int width = 800;
-        int height = 800;
-        BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Renderer renderer = new Renderer(options.database, width, height, new MyJPanel(bi));
-        renderer.start();
-
-        Thread.sleep(99999999);
-      } catch (Exception e) {
-        e.printStackTrace();
-      } finally {
-        options.database.close();
-//        database.log.removeAllAppenders();
-//        org.apache.log4j.LogManager.shutdown();
-      }
-    } else {
-      System.err.println("Couldn't connect.");
-    }
-    OurExecutor.instance.shutdownNow();
-  }
-
-  private static void getAndPrintJob(Jobs jobs, int id) {
-    Job job = jobs.getJobWhereIdIs(id);
-    System.out.printf("got job %s\n", job);
-  }
-
-  private static void getAndPrintDrone(Drones drones, int id) {
-    Drone drone = drones.getDroneWhereIdIs(id);
-    System.out.printf("got drone %s\n", drone);
-  }
-
 
   public static class DroneStats {
     public int ready;
@@ -629,21 +574,6 @@ public class Renderer {
           break;
       }
     }
-  }
-
-  private static class MyJPanel extends JPanel implements JComponentWithBufferedImage {
-
-    private final BufferedImage bi;
-
-    MyJPanel(BufferedImage bi) {
-      this.bi = bi;
-    }
-
-    @Override
-    public BufferedImage getBufferedImage() {
-      return bi;
-    }
-
   }
 
 }

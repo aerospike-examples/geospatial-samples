@@ -3,6 +3,8 @@ package com.aerospike.delivery;
 import com.aerospike.delivery.javafx.OurApplication;
 import com.aerospike.delivery.util.OurExecutor;
 
+import java.util.concurrent.TimeUnit;
+
 
 public class App {
 
@@ -37,7 +39,6 @@ public class App {
       case Reset:
       case Full:
       case Headless:
-        System.out.println("Clearing the Aerospike database.");
         OurOptions.instance.database.clear();
         break;
       case Observe:
@@ -46,7 +47,6 @@ public class App {
 
     switch (OurOptions.instance.animationMode) {
       case Reset:
-        break;
       case Full:
         break;
       case Observe:
@@ -57,20 +57,18 @@ public class App {
         break;
     }
 
-    Metering.start();
-
     switch (OurOptions.instance.animationMode) {
       case Reset:
         break;
       case Full:
         // This calls makeAnimation().run() and calls cleanup().
-        OurApplication.startUI(this, true);
+        OurApplication.startUI();
         break;
       case Observe:
         System.out.println("Running in observe mode.");
-        Animation.isDrawingCirclesAndLines = true;
+        Conductor.isDrawingCirclesAndLines = true;
         // This calls cleanup().
-        OurApplication.startUI(this, false);
+        OurApplication.startUI();
         break;
       case Headless:
         runAnimationAndCleanUp();
@@ -80,7 +78,7 @@ public class App {
    return;
   }
 
-  private void runAnimationAndCleanUp() {
+  private static void runAnimationAndCleanUp() {
     try {
       makeAnimation().run();
     } finally {
@@ -88,11 +86,18 @@ public class App {
     }
   }
 
+
+  public static Conductor makeAnimation() {
+    return new Conductor();
+  }
+
   //-----------------------------------------------------------------------------------
   // callbacks from javafx.OurApplication
 
-  public Animation makeAnimation() {
-    return new Animation();
+  public static void scheduleAnimation() {
+    if (OurOptions.instance.animationMode == OurOptions.AnimationMode.Full) {
+      OurExecutor.instance.schedule(makeAnimation(), 1000, TimeUnit.MILLISECONDS);
+    }
   }
 
   public static void cleanup() {

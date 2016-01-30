@@ -2,9 +2,13 @@ package com.aerospike.delivery.javafx;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.concurrent.TimeUnit;
 
+import com.aerospike.delivery.App;
+import com.aerospike.delivery.OurOptions;
 import com.aerospike.delivery.swing.Renderer;
 
+import com.aerospike.delivery.util.OurExecutor;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -47,6 +51,7 @@ public class MainWindowController {
   void initialize() {
     instance = this;
     System.out.println("initialized");
+    setJobStats  (new Renderer.JobStats());
     setDroneStats(new Renderer.DroneStats());
   }
 
@@ -54,7 +59,6 @@ public class MainWindowController {
     Platform.runLater((Runnable) () -> {
       jobsWaiting   .setText(String.valueOf(jobStats.waiting));
       jobsDelivering.setText(String.valueOf(jobStats.delivering));
-//      jobsOnHold    .setText(String.valueOf(jobStats.onHold));
     });
   }
 

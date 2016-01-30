@@ -74,12 +74,13 @@ public class InMemoryDrones extends Drones {
 
   @Override
   public void foreachCached(Predicate<? super Drone> action) {
-    Collection<Drone> values = contents.values();
+    Collection<Drone> values;
     synchronized (contents) {
-      for (Drone drone : values) {
-        if (!action.test(drone))
-          break;
-      }
+      values = contents.values();
+    }
+    for (Drone drone : values) {
+      if (!action.test(drone))
+        break;
     }
   }
 
@@ -89,11 +90,12 @@ public class InMemoryDrones extends Drones {
     BlockingQueue<Drone> result = new LinkedBlockingQueue<>();
     OurExecutor.instance.execute(() -> {
       try {
-        Collection<Drone> values = contents.values();
+        Collection<Drone> values;
         synchronized (contents) {
-          for (Drone drone : values) {
-            result.add(drone.copy());
-          }
+          values = contents.values();
+        }
+        for (Drone drone : values) {
+          result.add(drone.copy());
         }
         result.add(Drone.NullDrone);
       } catch (Exception e) {

@@ -138,25 +138,19 @@ public class AerospikeDrones extends Drones {
   public boolean put(Drone drone) {
     Key key = new Key(database.namespace, setName, drone.id);
     putIntoCache(drone);
-    Bin idBin = new Bin("id", drone.id);
-    Bin stateBin = new Bin("state", drone.state.name());
-    Bin locationBin = Bin.asGeoJSON("location", drone.getLocation().toGeoJSONPointDouble());
-    Bin jobIdBin = new Bin("jobID", drone.jobId);
-    Bin exampleBin = new Bin("example", drone.isExample);
-    Bin radiusBin = new Bin("radius", drone.currentRadius);
-    Bin startBin          = null;
-    Bin jobOriginBin      = null;
-    Bin jobDestinationBin = null;
+    Bin idBin          = new Bin("id", drone.id);
+    Bin stateBin       = new Bin("state", drone.state.name());
+    Bin locationBin    =     Bin.asGeoJSON("location", drone.getLocation().toGeoJSONPointDouble());
+    Bin jobIdBin       = new Bin("jobID", drone.jobId);
+    Bin exampleBin     = new Bin("example", drone.isExample);
+    Bin radiusBin      = new Bin("radius", drone.currentRadius);
     List<Bin> binsList = new ArrayList<>(Arrays.asList(idBin, stateBin, locationBin, jobIdBin, exampleBin, radiusBin));
     if (drone.startLocation != null) {
-      startBin = Bin.asGeoJSON("start", drone.startLocation.toGeoJSONPointDouble());
-      binsList.add(startBin);
+      binsList.add(Bin.asGeoJSON("start", drone.startLocation.toGeoJSONPointDouble()));
     }
     if (drone.jobOrigin != null) {
-      jobOriginBin      = Bin.asGeoJSON("jobOrigin",      drone.jobOrigin     .toGeoJSONPointDouble());
-      jobDestinationBin = Bin.asGeoJSON("jobDestination", drone.jobDestination.toGeoJSONPointDouble());
-      binsList.add(jobOriginBin);
-      binsList.add(jobDestinationBin);
+      binsList.add(Bin.asGeoJSON("jobOrigin",      drone.jobOrigin     .toGeoJSONPointDouble()));
+      binsList.add(Bin.asGeoJSON("jobDestination", drone.jobDestination.toGeoJSONPointDouble()));
     }
     Bin[] bins = binsList.toArray(new Bin[] {});
     try {

@@ -8,6 +8,8 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.aerospike.delivery.Job.State.Waiting;
+
 
 public class Job extends Movable implements Comparable<Job> {
 
@@ -27,6 +29,8 @@ public class Job extends Movable implements Comparable<Job> {
   public final ReentrantReadWriteLock lock; // todo Renderer should readLock
   private boolean isCandidate; // found by the circle query
   public static Job NullJob = new Job();
+  public Instant timePickedUp;
+  public Instant timeDelivered;
 
   public Job(Jobs jobs) {
     super();
@@ -42,7 +46,8 @@ public class Job extends Movable implements Comparable<Job> {
 
   public Job(Jobs jobs, Jobs.Metadata metadata, int id, State state,
              Location origin, Location destination, Location location, Location previousLocation,
-             int droneId, boolean isCandidate) {
+             int droneId, boolean isCandidate,
+             Instant timePickedUp, Instant timeDelivered) {
     super();
     this.jobs = jobs;
     this.metadata = metadata;
@@ -52,6 +57,8 @@ public class Job extends Movable implements Comparable<Job> {
     this.isCandidate = isCandidate;
     this.origin = origin;
     this.destination = destination;
+    this.timePickedUp = timePickedUp;
+    this.timeDelivered = timeDelivered;
     super.setLocation(location);
     this.previousLocation = previousLocation;
     lock = new ReentrantReadWriteLock(true);
@@ -92,6 +99,14 @@ public class Job extends Movable implements Comparable<Job> {
     this.origin = origin;
   }
 
+  public void setTimePickedUp(Instant newValue) {
+    this.timePickedUp = newValue;
+  }
+
+  public void setTimeDelivered(Instant newValue) {
+    this.timeDelivered = newValue;
+  }
+
   public enum State {
     Init,
     Waiting,
@@ -129,7 +144,7 @@ public class Job extends Movable implements Comparable<Job> {
 
   public boolean changeStateAndPut(State from, State to) {
     Database.assertWriteLocked(lock);
-    if (to != State.Waiting) {
+    if (to != Waiting) {
       isCandidate = false;
     }
     boolean result = jobs.putWithNewState(this, from, to);
@@ -146,19 +161,6 @@ public class Job extends Movable implements Comparable<Job> {
       isCandidate = newValue;
       put();
     }
-  }
-
-  public Drone getDrone() {
-
-    return drone;
-  }
-
-  public void setDrone(Drone newValue) {
-    drone = newValue;
-  }
-
-  public void touch() {
-    timePutOnHold = Instant.now();
   }
 
 

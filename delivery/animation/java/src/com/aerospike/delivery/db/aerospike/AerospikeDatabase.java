@@ -9,6 +9,8 @@ import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.util.OurExecutor;
 import org.apache.commons.cli.CommandLine;
 
+import java.time.Instant;
+
 public class AerospikeDatabase extends Database {
 
   private Parameters parameters;
@@ -41,6 +43,7 @@ public class AerospikeDatabase extends Database {
     if (client.isConnected()) {
       drones = new AerospikeDrones(this);
       jobs = new AerospikeJobs(this);
+      Metering.start();
       return true;
     } else {
       return false;
@@ -65,6 +68,7 @@ public class AerospikeDatabase extends Database {
 
   @Override
   public void clear() {
+    System.out.println("Clearing the Aerospike database.");
     jobs.clear();
     drones.clear();
   }
@@ -130,6 +134,22 @@ public class AerospikeDatabase extends Database {
       }
     }
     return;
+  }
+
+  // ------------------------------------------------------------------------------------------------
+
+  static long[] instantToLongs(Instant instant) {
+    if (instant == null) return null;
+    return new long[] { instant.getEpochSecond(), instant.getNano() };
+  }
+
+  static Instant longsToInstant(Record record, String binName) {
+    Object value = record.getValue(binName);
+    if (value == null) {
+      return null;
+    }
+    long[] parts = (long[]) value;
+    return Instant.ofEpochSecond(parts[0], parts[1]);
   }
 
   // ------------------------------------------------------------------------------------------------

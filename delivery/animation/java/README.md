@@ -8,7 +8,7 @@ mvn package
 Running
 -------
 
-Usage on app server:
+Usage:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 java -cp \
@@ -23,7 +23,7 @@ Run this on your app server:
 java -cp \
     delivery-*-jar-with-dependencies.jar \
     com.aerospike.delivery.App \
-    --headless -h app-server
+    --headless -h cluster-1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Run this on your desktop computer:
@@ -32,5 +32,5 @@ Run this on your desktop computer:
 java -cp \
     delivery-*-jar-with-dependencies.jar \
     com.aerospike.delivery.App \
-    --observe -h app-server
+    --observe -h cluster-1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

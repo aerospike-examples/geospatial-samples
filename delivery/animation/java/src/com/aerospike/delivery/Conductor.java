@@ -12,11 +12,11 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 
-public class Animation implements Runnable {
+public class Conductor implements Runnable {
 
   private final OurOptions options;
 
-  public Animation() {
+  public Conductor() {
     options = OurOptions.instance;
   }
 
@@ -32,12 +32,12 @@ public class Animation implements Runnable {
 
   // Jobs accesses this
   public static int backlogExcess(int nbDrones) {
-    return (int) Math.max(minimumNumberOfWaitingJobs, nbDrones * 1.1);
+    return nbDrones + minimumNumberOfWaitingJobs;
   }
 
   private static int slowdownFactor = slowdownFactorDefault;
   private static int minimumNumberOfWaitingJobs = 30; // At least 2
-  private        int benchmarkSlowdownFactor = 0; // full speed
+  private        int swarmSlowdownFactor = 0; // full speed
   private List<Drone> exampleDrones = new ArrayList<>();
 
 
@@ -64,18 +64,18 @@ public class Animation implements Runnable {
 
     if (options.isShowingTutorial) {
       activateAndWait(1, 1, options.nbTrips, 0, true);
-      if (options.isRunningBenchmark) {
+      if (options.isRunningSwarm) {
         delayMs(pauseMs * 1);
       }
     }
 
     int durationNs = 20_000_000;
 
-    if (options.isRunningBenchmark) {
-      slowdownFactor = benchmarkSlowdownFactor;
+    if (options.isRunningSwarm) {
+      slowdownFactor = swarmSlowdownFactor;
       options.isDrawingJobNumbers = false;
       for (int i = 0 ; i < 99 ; ++i) {
-        activateAndWait(options.nbBenchmarkDrones, 1, options.nbTrips, durationNs, true);
+        activateAndWait(options.nbSwarmDrones, 1, options.nbTrips, durationNs, true);
         delayMs(pauseMs);
       }
     }
@@ -84,12 +84,8 @@ public class Animation implements Runnable {
   // Activate all drones, including possibly n-pew ones,
   // and wait for them all to go off duty.
   private void activateAndWait(int totalDrones, int nbExamples, int maxTrips, long durationNs, boolean isDrawingCirclesAndLines) throws InterruptedException {
-    Animation.isDrawingCirclesAndLines = isDrawingCirclesAndLines;
+    Conductor.isDrawingCirclesAndLines = isDrawingCirclesAndLines;
     maxTripsPerDrone = maxTrips;
-    if (totalDrones > 100) {
-      durationNs = 0;
-    }
-
     addDrones(totalDrones, nbExamples, durationNs);
     delayMs(1000);
     prepareCountDownLatch(totalDrones);
@@ -102,7 +98,7 @@ public class Animation implements Runnable {
       drone.setExample(false);
     }
     exampleDrones.clear();
-    Animation.isDrawingCirclesAndLines = false;
+    Conductor.isDrawingCirclesAndLines = false;
     return;
   }
 

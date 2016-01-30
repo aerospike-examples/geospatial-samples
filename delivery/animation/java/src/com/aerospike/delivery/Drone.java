@@ -6,6 +6,7 @@ import com.aerospike.delivery.db.base.Drones;
 import com.aerospike.delivery.db.base.Jobs;
 import com.aerospike.delivery.util.OurExecutor;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
+
+import static com.aerospike.delivery.Drone.State.*;
 
 public class Drone extends Movable implements Runnable, Comparable<Drone> {
 
@@ -30,7 +33,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   private static final TimeUnit timeUnit = TimeUnit.MILLISECONDS;
 
   private long circleDelay()        { return slowdownFactor( 5); }
-  private long initDelay()          { return slowdownFactor(10); }
+  private long initDelay()          { return slowdownFactor( 0); }
   private long gotAJobDelay()       { return slowdownFactor(10); }
   private long departingDelay()     { return slowdownFactor(10); }
   private long arrivedAtJobDelay()  { return slowdownFactor( 5); }
@@ -89,7 +92,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   public Drone(Drones drones) {
     super();
     this.drones = drones;
-    state = State.Init;
+    state = Init;
     waypoint = getLocation(); // todo Should this be here?
     this.id = this.drones.nextID++;
     candidates = new ArrayList<>();
@@ -132,7 +135,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   }
 
 
-  public boolean setState(Drone.State newValue) {
+  public boolean setState(State newValue) {
     return drones.changeState(this, state, newValue);
   }
 
@@ -153,9 +156,9 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
 
   private long slowdownFactor(int delay) {
     if (isExample) {
-      return delay * Animation.slowdownFactorDefault;
+      return delay * Conductor.slowdownFactorDefault;
     } else {
-      return delay * Animation.slowdownFactor();
+      return delay * Conductor.slowdownFactor();
     }
   }
 
@@ -196,9 +199,12 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
       while (true) {
         switch (state) {
           case Init:
+            // OurExecutor.instance.submit() starts the animation here.
             nbTrips = 0;
             willGoOffDuty = false;
-            if (delayAndThen(initDelay(), State.Ready))
+
+          // Ready
+            if (delayInState(initDelay(), Ready))
               return; else continue;
           case Ready:
             startLocation = getLocation(); // used for drawing
@@ -208,28 +214,41 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
               return;
             }
 //            System.out.println("- read " + this);
-            if (++nbTrips >= Animation.maxTripsPerDrone) {
+            if (++nbTrips >= Conductor.maxTripsPerDrone) {
               willGoOffDuty = true;
+              if (isExample || id == FirstID) {
+                Conductor.isLeadDroneStillRunning = false;
+              }
             }
-            if (delayAndThen(gotAJobDelay(), State.GotAJob))
+
+          // GotAJob
+            if (delayInState(gotAJobDelay(), GotAJob))
               return; else continue;
           case GotAJob:
-            if (delayAndThen(departingDelay(), State.Departing))
+
+          // Departing
+            if (delayInState(departingDelay(), Departing))
               return; else continue;
           case Departing:
-            setState(State.EnRoute);
             speedStep = 0;
+
+          // EnRoute
+            setState(EnRoute);
             continue;
           case EnRoute:
             if (stillInMotion(job.getOrigin())) {
               return;
             }
             resetCandidates();
-            if (delayAndThen(arrivedAtJobDelay(), State.ArrivedAtJob)) return;
-            else continue;
+
+          // ArrivedAtJob
+            if (delayInState(arrivedAtJobDelay(), ArrivedAtJob))
+              return; else continue;
           case ArrivedAtJob:
-            setState(State.Delivering);
             speedStep = 0;
+
+          // Delivering
+            setState(Delivering);
             continue;
           case Delivering:
             currentRadius = 0;
@@ -237,45 +256,39 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
               return;
             }
             job.previousLocation = job.getLocation();
-            if (delayAndThen(deliveredDelay(), State.Delivered))
+
+          // Delivered
+            if (delayInState(deliveredDelay(), Delivered))
               return; else continue;
           case Delivered:
-            setState(State.Done);
+
+          // Done
+            setState(Done);
             continue;
           case Done:
-            if (willGoOffDuty && (isExample || id == FirstID)) {
-              Animation.isLeadDroneStillRunning = false;
-            }
-            if (willGoOffDuty && !Animation.isLeadDroneStillRunning) {
-//              System.out.println("- off1 " + this);
-              Database.withWriteLock(job.lock, () -> {
-                job.updateCoordinates();
-                return job.put();
-              });
-              setState(State.OffDuty);
-            } else {
-//              System.out.println("- done " + this);
-              Database.withWriteLock(job.lock, () -> {
-                job.updateCoordinates();
-                return job.setStateAndPut(Job.State.Waiting);
-              });
-              setJob(null);
-              setState(State.Ready);
-            }
-            continue;
-          case OffDuty:
-//            System.out.println("- off2 " + this);
             Database.withWriteLock(job.lock, () -> {
+              job.updateCoordinates();
+              job.setTimeDelivered(Instant.now());
               return job.setStateAndPut(Job.State.Waiting);
             });
-//            System.out.println("- off3 " + this);
             setJob(null);
+            if (!willGoOffDuty || Conductor.isLeadDroneStillRunning) {
+              setState(Ready);
+              continue;
+            }
+
+          // OffDuty exit
             isActive = false;
-            setState(State.Init);
             currentRadius = 0;
-//            System.out.println("- off4 " + this);
-            Animation.activeDrones.countDown(this);
+            Conductor.activeDrones.countDown(this);
+            setState(OffDuty);
             return;
+
+          // OffDuty reeëntry - OurExecutor.instance.submit() resumes the animation here.
+          case OffDuty:
+            isActive = true;
+            setState(Init);
+            continue;
         }
         throw new Error("Must not break from this switch.");
       }
@@ -288,7 +301,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   // For debugging, but performance is terrible if false!
   boolean isSchedulingInsteadOfDelaying = true;
 
-  private boolean delayAndThen(long delay, State newState) throws InterruptedException {
+  private boolean delayInState(long delay, State newState) throws InterruptedException {
     setState(newState);
     if (!isExample) {
       return false;
@@ -350,9 +363,10 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
 //      System.out.format("%s %s %1.3f   %1.3f   %1.3f   %s\n", waypoint, getLocation(), distance, thisSegment, intervalPortion, waypoint);
       result = true;
     }
-    if (state == State.Delivering) {
+    if (state == Delivering) {
       Database.withWriteLock(job.lock, () -> {
-        job.setLocation(Drone.this.getLocation());
+        Location droneLocation = getLocation();
+        job.setLocation(droneLocation);
         job.put();
         return true;
       });
@@ -393,6 +407,8 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
     for (Job job : candidates) {
       if (!job.getLocation().equals(getLocation())) {
         if (Database.withWriteLock(job.lock, () -> {
+          job.setTimePickedUp(Instant.now());
+          job.setTimeDelivered(null);
           return job.changeStateAndPut(Job.State.Waiting, Job.State.InProcess);
         })) {
           isSearchContinuing = false;

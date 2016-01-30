@@ -4,7 +4,6 @@ package com.aerospike.delivery.javafx;
 import com.aerospike.delivery.App;
 import com.aerospike.delivery.OurOptions;
 import com.aerospike.delivery.swing.MapPanel;
-import com.aerospike.delivery.util.OurExecutor;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
@@ -20,9 +19,6 @@ import java.net.URL;
 public class OurApplication extends Application {
 
   public static final String name = "Aerospike Drone Courier";
-  static final OurOptions options = OurOptions.instance;
-  private static App app;
-  private static boolean isDoingAnimation;
 
   @Override
   public void start(Stage primaryStage) throws Exception {
@@ -37,12 +33,6 @@ public class OurApplication extends Application {
     createAndSetSwingContent(primaryStage, swingNode);
     Pane animationContainer = (Pane) root.lookup("#animationPane");
     animationContainer.getChildren().add(swingNode);
-
-    if (isDoingAnimation) {
-      Thread.sleep(1000);
-      OurExecutor.instance.submit(app.makeAnimation());
-    }
-
   }
 
   private void createAndSetSwingContent(final Stage primaryStage, final SwingNode swingNode) {
@@ -55,20 +45,19 @@ public class OurApplication extends Application {
         primaryStage.sizeToScene();
         primaryStage.setResizable(false);
         primaryStage.show();
+        App.scheduleAnimation();
       });
     });
   }
 
-  public static void startUI(App app, boolean isDoingAnimation) {
-    OurApplication.app = app;
-    OurApplication.isDoingAnimation = isDoingAnimation;
-    // Launch has to be called statically from this class (which extends Animation). Apparently.
+  public static void startUI() {
+    // Launch has to be called statically from this class (which extends Application). Apparently.
     try {
       String[] args = {};
       launch(args);
     } finally {
       // If this GUI is involved, it's in charge of cleanup because the call to launch returns when the GUI is done.
-      app.cleanup();
+      App.cleanup();
     }
   }
 

@@ -12,6 +12,10 @@ import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Jobs;
 import com.aerospike.delivery.util.OurExecutor;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -327,19 +331,29 @@ public class AerospikeJobs extends Jobs {
     Database.assertWriteLocked(job.lock);
     Key key = new Key(database.namespace, setName, job.id);
     String originBinName = job.state.name(); // location is stored in a bin by this name
-    Bin idBin           = new Bin("id",        job.id);
-    Bin stateBin        = new Bin("state",     originBinName);
-    Bin originBin       =     Bin.asGeoJSON(originBinName,   job.getOrigin()     .toGeoJSONPointDouble());
-    Bin destinationBin  =     Bin.asGeoJSON("destination",   job.getDestination().toGeoJSONPointDouble());
-    Bin locationBin     =     Bin.asGeoJSON("location",      job.getLocation()   .toGeoJSONPointDouble());
-    Bin prevLocationBin =     Bin.asGeoJSON("previous",      job.previousLocation.toGeoJSONPointDouble());
-    Bin isCandidateBin    = new Bin("candidate", job.isCandidate());
-    Bin droneIdBin      = new Bin("droneid",  job.droneid);
+    Bin idBin            = new Bin("id",        job.id);
+    Bin stateBin         = new Bin("state",     originBinName);
+    Bin originBin        =     Bin.asGeoJSON(originBinName,   job.getOrigin()     .toGeoJSONPointDouble());
+    Bin destinationBin   =     Bin.asGeoJSON("destination",   job.getDestination().toGeoJSONPointDouble());
+    Bin locationBin      =     Bin.asGeoJSON("location",      job.getLocation()   .toGeoJSONPointDouble());
+    Bin prevLocationBin  =     Bin.asGeoJSON("previous",      job.previousLocation.toGeoJSONPointDouble());
+    Bin isCandidateBin   = new Bin("candidate", job.isCandidate());
+    Bin droneIdBin       = new Bin("droneid",   job.droneid);
+    List<Bin> binsList = new ArrayList<>(Arrays.asList(idBin, stateBin, originBin, destinationBin, locationBin, prevLocationBin, isCandidateBin, droneIdBin));
+    long[] timePickedUpAsLongs  = AerospikeDatabase.instantToLongs(job.timePickedUp);
+    if (timePickedUpAsLongs != null) {
+      binsList.add(new Bin("pickedUp", timePickedUpAsLongs));
+    }
+    long[] timeDeliveredAsLongs = AerospikeDatabase.instantToLongs(job.timeDelivered);
+    if (timeDeliveredAsLongs != null) {
+      binsList.add(new Bin("delivered", timeDeliveredAsLongs));
+    }
+    Bin[] bins = binsList.toArray(new Bin[] {});
 //    System.out.printf("put %s\n", job);
     WritePolicy writePolicy = makePutWritePolicy(job);
     try {
       ++Metering.jobPuts;
-      database.client.put(writePolicy, key, idBin, stateBin, originBin, destinationBin, locationBin, prevLocationBin, isCandidateBin, droneIdBin);
+      database.client.put(writePolicy, key, bins);
       ++((Metadata)job.metadata).generation;
 //      database.log.info(String.format("changed %s to %s %s %d", ((Metadata)job.metadata).previousState, job.state, job, ((Metadata)job.metadata).generation));
       return true;
@@ -385,13 +399,15 @@ public class AerospikeJobs extends Jobs {
     String locationBinName = state.name(); // location is stored in a bin by this name
     Metadata metadata = new Metadata();
     metadata.generation = record.generation;
-    int id = record.getInt("id");
-    Location origin       = Location.makeFromGeoJSONPointDouble(record.getGeoJSON(locationBinName));
-    Location destination  = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("destination"));
-    Location location     = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("location"));
-    Location prevLocation = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("previous"));
-    int droneId = record.getInt("droneId");
-    boolean isCandidate = record.getBoolean("candidate");
+    int      id            = record.getInt("id");
+    Location origin        = Location.makeFromGeoJSONPointDouble(record.getGeoJSON(locationBinName));
+    Location destination   = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("destination"));
+    Location location      = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("location"));
+    Location prevLocation  = Location.makeFromGeoJSONPointDouble(record.getGeoJSON("previous"));
+    Instant  timePickedUp  = AerospikeDatabase.longsToInstant(record, "pickedUp");
+    Instant  timeDelivered = AerospikeDatabase.longsToInstant(record, "delivered");
+    int      droneId       = record.getInt("droneId");
+    boolean isCandidate    = record.getBoolean("candidate");
     Job job = new Job(this,
         metadata,
         id,
@@ -401,7 +417,9 @@ public class AerospikeJobs extends Jobs {
         location,
         prevLocation,
         droneId,
-        isCandidate
+        isCandidate,
+        timePickedUp,
+        timeDelivered
     );
 //    System.out.printf("get %s\n", job);
     return job;
@@ -422,6 +440,5 @@ public class AerospikeJobs extends Jobs {
       case OnHold:    return countOnHold    += amount;
     }
   }
-
 
 }

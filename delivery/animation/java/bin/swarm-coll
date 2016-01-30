@@ -1,0 +1,7 @@
+#!/bin/bash
+
+java -cp \
+  target/delivery-*-jar-with-dependencies.jar \
+  com.aerospike.delivery.App \
+  -h aerospike-cluster-1 \
+  --collections --swarm --fixed-seed $@

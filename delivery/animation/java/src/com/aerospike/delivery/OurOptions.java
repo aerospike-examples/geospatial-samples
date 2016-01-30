@@ -19,17 +19,17 @@ public class OurOptions {
   static long animationIntervalMs = 1000 / Renderer.maxFramesPerSecond;
 
   public String appName;
-  int nbBenchmarkDrones = 50;
-  int nbTrips = 6;
-  static double startingRadius = .05;
+  int nbSwarmDrones = 70;
+  int nbTrips = 5;
+  static double startingRadius = .005;
   double animationSpeed = 1.0;
   public boolean isDrawingJobNumbers = false;
   int seedForRepeatableRandomBehavior = 6;
   DatabaseToUse databaseToUse;
   public Parameters parameters;
   boolean isShowingTutorial;
-  boolean isRunningBenchmark;
-  AnimationMode animationMode;
+  boolean isRunningSwarm;
+  public AnimationMode animationMode;
   boolean isRunningAdHocTest;
   public Database database;
 
@@ -74,8 +74,8 @@ public class OurOptions {
     cliOptions.addOption(null, "collections",false, "Use Java collections (default).");
     cliOptions.addOption(null, "aerospike",  false, "Use aerospike.");
     cliOptions.addOption(null, "tutorial",   false, "Show circles and lines demo.");
-    cliOptions.addOption(null, "benchmark",  false, "No delays, 500 drones");
-    cliOptions.addOption(null, "drones",     true,  "Number of benchmark drones (default " + nbBenchmarkDrones + ")");
+    cliOptions.addOption(null, "swarm",      false, "No delays, 500 drones");
+    cliOptions.addOption(null, "drones",     true,  "Number of swarm drones (default " + nbSwarmDrones + ")");
     cliOptions.addOption(null, "fixed-seed", false, "Use fixed random seed.");
     cliOptions.addOption(null, "trips",      true,  "Number of trips (default " + nbTrips + ")");
     cliOptions.addOption(null, "speed",      true,  "Animation speed (default 1.0)");
@@ -163,21 +163,21 @@ public class OurOptions {
       OurRandom.instance = new Random(seedForRepeatableRandomBehavior);
     }
 
-    if (!cl.hasOption("tutorial") && !cl.hasOption("benchmark")) {
+    if (!cl.hasOption("tutorial") && !cl.hasOption("swarm")) {
       isShowingTutorial = true;
-      isRunningBenchmark = true;
+      isRunningSwarm = true;
     } else {
       if (cl.hasOption("tutorial")) {
         isShowingTutorial = true;
       }
-      if (cl.hasOption("benchmark")) {
-        isRunningBenchmark = true;
+      if (cl.hasOption("swarm")) {
+        isRunningSwarm = true;
       }
     }
 
     if (cl.hasOption("drones")) {
       String str = cl.getOptionValue("drones");
-      nbBenchmarkDrones = Integer.parseInt(str);
+      nbSwarmDrones = Integer.parseInt(str);
     }
 
     if (cl.hasOption("trips")) {

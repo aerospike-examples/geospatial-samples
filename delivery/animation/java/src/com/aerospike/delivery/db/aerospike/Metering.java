@@ -1,4 +1,4 @@
-package com.aerospike.delivery;
+package com.aerospike.delivery.db.aerospike;
 
 import com.aerospike.delivery.util.OurExecutor;
 

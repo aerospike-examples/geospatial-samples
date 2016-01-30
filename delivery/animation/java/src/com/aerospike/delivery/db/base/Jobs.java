@@ -71,8 +71,7 @@ public abstract class Jobs {
 
   private void ensureEnoughJobs() {
     int nbDrones = OurOptions.instance.database.getDrones().size();
-    int nbWaiting = size(Job.State.Waiting);
-    int count = Animation.backlogExcess(nbDrones) - nbWaiting;
+    int count = Conductor.backlogExcess(nbDrones) - size();
     if (count > 0) {
       addMore(count);
     }
