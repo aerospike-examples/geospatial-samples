@@ -11,7 +11,7 @@ import com.aerospike.delivery.util.OurExecutor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.LinkedHashMap;
 
 
 public class InfoParser {
@@ -69,7 +69,7 @@ public class InfoParser {
 
   //------------------------------------------------------------------------------------
 
-  public static class NumericInfoListMap extends TreeMap<String, List<NumericInfo>> {
+  public static class NumericInfoListMap extends LinkedHashMap<String, List<NumericInfo>> {
 
     public NumericInfoListMap(String[] nodeInfoStrings) {
       super();
@@ -110,7 +110,7 @@ public class InfoParser {
 
   //------------------------------------------------------------------------------------
 
-  public static class NumericInfoMap extends TreeMap<String, NumericInfo> {
+  public static class NumericInfoMap extends LinkedHashMap<String, NumericInfo> {
 
     NumericInfoMap() { }
 
@@ -150,9 +150,9 @@ public class InfoParser {
 
   //------------------------------------------------------------------------------------
 
-  public static class NumericInfo extends TreeMap<String, Double> {
+  public static class NumericInfo extends LinkedHashMap<String, Double> {
 
-    final Map<String, String> other = new TreeMap<>();
+    final Map<String, String> other = new LinkedHashMap<>();
 
     public NumericInfo() { }
 

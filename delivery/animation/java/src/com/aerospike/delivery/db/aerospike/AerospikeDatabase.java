@@ -41,6 +41,7 @@ public class AerospikeDatabase extends Database {
   public boolean connect() {
     client = new AerospikeClient(clientPolicy, parameters.host, parameters.port);
     if (client.isConnected()) {
+      System.out.println(clientPolicy.maxThreads + " client threads.");
       drones = new AerospikeDrones(this);
       jobs = new AerospikeJobs(this);
       Metering.start();
