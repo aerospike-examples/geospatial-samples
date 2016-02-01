@@ -39,6 +39,11 @@ import java.util.concurrent.TimeUnit;
  * Does its work in a thread allocated by the Timer class.
  * Each time it renders it uses the Aerospike scanAll method, which delivers results in multiple threads.
  * The calls to Graphics2D drawing methods are serialized via the synchronized keyword.
+ *
+ * todo Convert from Swing to JavaFX
+ * Use separate layers for job sprites and drone sprites.
+ * Update sprite properties (via invokeLater()) from the scan callbacks,
+ * which occur in multiple threads.
  */
 public class Renderer {
 
