@@ -27,18 +27,18 @@ public class Metering implements Runnable {
 
   public static final Metering instance = new Metering();
 
-  public static volatile int jobQueryWithinRadius;
-  public static volatile int jobRadiusResults;
-  public static volatile int jobScans;
-  public static volatile int jobScanResults;
-  public static volatile int jobPuts;
-  public static volatile int jobGets;
-  public static volatile int droneScans;
-  public static volatile int droneScanResults;
-  public static volatile int dronePuts;
-  public static volatile int droneGets;
+  static volatile int jobQueryWithinRadius;
+  static volatile int jobRadiusResults;
+  static volatile int jobScans;
+  static volatile int jobScanResults;
+  static volatile int jobPuts;
+  static volatile int jobGets;
+  static volatile int droneScans;
+  static volatile int droneScanResults;
+  static volatile int dronePuts;
+  static volatile int droneGets;
 
-  final int nbSeconds = 3;
+  private final int nbSeconds = 3;
   public volatile long renders;
   private volatile Future future;
   private volatile boolean isStopping;

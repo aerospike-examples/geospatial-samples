@@ -32,7 +32,7 @@ public class Conductor implements Runnable {
 
   private final OurOptions options;
 
-  public Conductor() {
+  Conductor() {
     options = OurOptions.instance;
   }
 
@@ -104,7 +104,7 @@ public class Conductor implements Runnable {
     maxTripsPerDrone = maxTrips;
     addDrones(totalDrones, nbExamples, durationNs);
     delayMs(1000);
-    prepareCountDownLatch(totalDrones);
+    prepareCountDownLatch();
     activate(durationNs);
 //    for (Drone drone : drones.contents) System.out.println(drone);
     activeDrones.await();
@@ -115,10 +115,9 @@ public class Conductor implements Runnable {
     }
     exampleDrones.clear();
     Conductor.isDrawingCirclesAndLines = false;
-    return;
   }
 
-  private void prepareCountDownLatch(int totalDrones) {
+  private void prepareCountDownLatch() {
     Set<Drone> drones = new HashSet<>();
     options.database.getDrones().foreachCached(drone -> {
       drones.add(drone);
@@ -187,7 +186,7 @@ public class Conductor implements Runnable {
     });
   }
 
-  static void delayMs(long ms) {
+  private static void delayMs(long ms) {
     try {
       Thread.sleep(ms);
     } catch (InterruptedException e) {
@@ -195,7 +194,7 @@ public class Conductor implements Runnable {
     }
   }
 
-  static void delayNs(long durationNs) {
+  private static void delayNs(long durationNs) {
     long ms = durationNs / 1000000;
     try {
       Thread.sleep(ms, (int) (durationNs % 1000000));

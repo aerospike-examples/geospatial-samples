@@ -29,16 +29,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
 
 
-public class InMemoryJobs extends Jobs {
+class InMemoryJobs extends Jobs {
 
   private ConcurrentHashMap<Integer, Job> jobsWaiting;
   private ConcurrentHashMap<Integer, Job> jobsInProcess;
   private ConcurrentHashMap<Integer, Job> jobsOnHold;
 
-  class Metadata extends Jobs.Metadata { }
 
-
-  public InMemoryJobs() {
+  InMemoryJobs() {
     jobsWaiting   = new ConcurrentHashMap<>();
     jobsInProcess = new ConcurrentHashMap<>();
     jobsOnHold    = new ConcurrentHashMap<>();
@@ -177,7 +175,7 @@ public class InMemoryJobs extends Jobs {
     result = jobsInProcess.get(id);
     if (result != null) return result;
     result = jobsOnHold.get(id);
-    return null;
+    return result;
   }
 
   @Override

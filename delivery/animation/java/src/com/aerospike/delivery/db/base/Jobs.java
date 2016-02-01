@@ -37,7 +37,7 @@ public abstract class Jobs {
   }
 
 
-  public final void addMore(int count) {
+  private void addMore(int count) {
     for (int i = 0 ; i < count ; ++i) {
       // newJob adds the job to the Waiting set.
       newJob(Job.State.Waiting);

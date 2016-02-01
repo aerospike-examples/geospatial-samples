@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 public class App {
 
-  public  static final String appName = "Aerospike Drone Courier";
+  private static final String appName = "Aerospike Drone Courier";
 
   //-----------------------------------------------------------------------------------
 
@@ -91,8 +91,6 @@ public class App {
         runAnimationAndCleanUp();
         break;
     }
-
-   return;
   }
 
   private static void runAnimationAndCleanUp() {
@@ -104,7 +102,7 @@ public class App {
   }
 
 
-  public static Conductor makeAnimation() {
+  private static Conductor makeAnimation() {
     return new Conductor();
   }
 

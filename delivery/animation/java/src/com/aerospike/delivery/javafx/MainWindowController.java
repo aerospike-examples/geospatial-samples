@@ -17,19 +17,14 @@
 
 package com.aerospike.delivery.javafx;
 
-import java.net.URL;
-import java.util.ResourceBundle;
-import java.util.concurrent.TimeUnit;
-
-import com.aerospike.delivery.App;
-import com.aerospike.delivery.OurOptions;
 import com.aerospike.delivery.swing.Renderer;
-
-import com.aerospike.delivery.util.OurExecutor;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
+
+import java.net.URL;
+import java.util.ResourceBundle;
 
 
 public class MainWindowController {
@@ -60,8 +55,6 @@ public class MainWindowController {
   private Label jobsDelivering;
   @FXML
   private Label jobsWaiting;
-  @FXML
-  private Label jobsOnHold;
 
 
   @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -73,14 +66,14 @@ public class MainWindowController {
   }
 
   public void setJobStats(final Renderer.JobStats jobStats) {
-    Platform.runLater((Runnable) () -> {
+    Platform.runLater(() -> {
       jobsWaiting   .setText(String.valueOf(jobStats.waiting));
       jobsDelivering.setText(String.valueOf(jobStats.delivering));
     });
   }
 
   public void setDroneStats(Renderer.DroneStats stats) {
-    Platform.runLater((Runnable) () -> {
+    Platform.runLater(() -> {
       dronesReady     .setText(String.valueOf(stats.ready));
       dronesEnroute   .setText(String.valueOf(stats.enroute));
       dronesDelivering.setText(String.valueOf(stats.delivering));

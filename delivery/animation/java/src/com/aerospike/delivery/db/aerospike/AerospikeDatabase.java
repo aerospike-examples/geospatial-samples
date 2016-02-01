@@ -102,10 +102,8 @@ public class AerospikeDatabase extends Database {
     ScanPolicy scanPolicy = new ScanPolicy();
     scanPolicy.timeout = 100;
     try {
-      /*
-       * Scan the entire Set using scannAll(). This will scan each node
-       * in the cluster and return the record Digest to the call back object
-       */
+      // Scan the entire Set using scanAll(). This will scan each node
+      // in the cluster and return the record Digest to the call back object
       ClearScanCallback callback = new ClearScanCallback();
       scanAllWorkaround(scanPolicy, namespace, setName, callback);
       System.out.println("Deleted " + callback.count + " records from set " + setName);
@@ -116,7 +114,7 @@ public class AerospikeDatabase extends Database {
   }
 
 
-  class ClearScanCallback implements ScanCallback {
+  private class ClearScanCallback implements ScanCallback {
     int count;
 
     public void scanCallback(Key key, Record record) {
@@ -132,11 +130,9 @@ public class AerospikeDatabase extends Database {
 
   // ------------------------------------------------------------------------------------------------
 
-  private volatile static long previousScanAllTime;
-
   // This app does something very unusual that hits a bug in the Java 3.1.8 client.
   // We do two scanAll calls very close together, causing their transaction IDs collide.
-  public final void scanAllWorkaround(ScanPolicy policy, String namespace, String setName, ScanCallback callback, String... bins)
+  final void scanAllWorkaround(ScanPolicy policy, String namespace, String setName, ScanCallback callback, String... bins)
       throws AerospikeException {
     while (true) {
       try {
@@ -148,10 +144,9 @@ public class AerospikeDatabase extends Database {
         if (resultCode != ResultCode.PARAMETER_ERROR) {
           throw e;
         }
-        continue; // Keep trying until we're past the client library bug with transaction ID.
+        // Keep trying until we're past the client library bug with transaction ID.
       }
     }
-    return;
   }
 
   // ------------------------------------------------------------------------------------------------
@@ -176,7 +171,7 @@ public class AerospikeDatabase extends Database {
   public static void main(String[] args) {
     OurOptions options = new OurOptions();
     options.doCommandLineOptions("ae-test", args);
-    AerospikeDatabase database = Database.makeAerospikeDatabase();
+    AerospikeDatabase database = new AerospikeDatabase();
     AerospikeJobs jobs = (AerospikeJobs) database.getJobs();
     if (database.connect()) {
       try {
@@ -195,8 +190,6 @@ public class AerospikeDatabase extends Database {
         e.printStackTrace();
       } finally {
         database.close();
-//        database.log.removeAllAppenders();
-//        org.apache.log4j.LogManager.shutdown();
       }
     } else {
       System.err.println("Couldn't connect.");

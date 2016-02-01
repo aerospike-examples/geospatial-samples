@@ -30,25 +30,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
 
 
-public class AerospikeDrones extends Drones {
+class AerospikeDrones extends Drones {
 
   private final AerospikeDatabase database;
-  String setName;
+  private String setName;
   private List<Drone> cache; // a List so we can iterate in id order.
-  private ConcurrentHashMap<Key, Drone> renderCache;
   private WritePolicy writePolicy;
 
 
-  public AerospikeDrones(AerospikeDatabase database) {
+  AerospikeDrones(AerospikeDatabase database) {
     this.database = database;
     setName = "drones";
     cache = new ArrayList<>();
-    renderCache = new ConcurrentHashMap<>();
     makeWritePolicy();
   }
 
@@ -57,7 +54,6 @@ public class AerospikeDrones extends Drones {
   public void clear() {
     super.clear();
     database.clearSet("drones");
-    renderCache.clear();
   }
 
   @Override
@@ -126,7 +122,7 @@ public class AerospikeDrones extends Drones {
 
         private final BlockingQueue<Drone> queue;
 
-        public OurScanCallback(BlockingQueue<Drone> queue) {
+        OurScanCallback(BlockingQueue<Drone> queue) {
           this.queue = queue;
         }
 

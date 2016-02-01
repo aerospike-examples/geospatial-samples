@@ -18,7 +18,6 @@
 package com.aerospike.delivery;
 
 import com.aerospike.client.Log;
-import com.aerospike.delivery.db.aerospike.Parameters;
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.swing.Renderer;
 import com.aerospike.delivery.util.OurRandom;
@@ -35,29 +34,27 @@ public class OurOptions {
 
   long animationIntervalMs = 1000 / Renderer.maxFramesPerSecond;
 
-  public String appName;
+  private String appName;
   int nbSwarmDrones = 70;
   int nbTrips = 5;
   double startingRadius = .005;
   double animationSpeed = 1.0;
   public boolean isDrawingJobNumbers = false;
-  int seedForRepeatableRandomBehavior = 6;
-  DatabaseToUse databaseToUse;
-  public Parameters parameters;
+  private int seedForRepeatableRandomBehavior = 6;
+  private DatabaseToUse databaseToUse;
   boolean isShowingTutorial;
   boolean isRunningSwarm;
-  public AnimationMode animationMode;
-  boolean isRunningAdHocTest;
+  AnimationMode animationMode;
   public Database database;
 
-  public enum AnimationMode {
+  enum AnimationMode {
     Reset,
     Full,     // app server and observing
     Observe,  // only observe the database
     Headless, // app server only
   }
 
-  enum DatabaseToUse {
+  private enum DatabaseToUse {
     Aerospike,
     Collections; // Java collections
 
@@ -98,8 +95,6 @@ public class OurOptions {
     cliOptions.addOption(null, "speed",      true,  "Animation speed (default 1.0)");
     cliOptions.addOption(null, "radius",     true,  "Starting radius (default " + startingRadius + ")");
     cliOptions.addOption(null, "reset",      false, "Reset database to empty.");
-//      options.addOption(null, "other", false, "Run an ad hoc test in the code");
-//      options.addOption(null, "nocache",    false, "Run aerospike without using a HashMap cache.");
 
     // Doesn't complain if the parser sees things other than the options above
     CommandLineParser parser = new PosixParser();
@@ -132,9 +127,6 @@ public class OurOptions {
       animationMode = AnimationMode.Observe;
     } else {
       animationMode = AnimationMode.Full;
-    }
-    if (cl.hasOption("other")) {
-      isRunningAdHocTest = true;
     }
 
     //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

@@ -79,7 +79,7 @@ public class InfoParser {
       //   query:20:07:45-GMT,ops/sec,>1ms,>8ms,>64ms;20:07:55,0.0,0.00,0.00,0.00;
     } catch (AerospikeException e) {
       int resultCode = e.getResultCode();
-      System.err.format("info request %s %s\n", name, ResultCode.getResultString(resultCode), e);
+      System.err.format("info request %s %s %s\n", name, ResultCode.getResultString(resultCode), e);
     }
     return null;
   }
@@ -90,8 +90,8 @@ public class InfoParser {
 
     public NumericInfoListMap(String[] nodeInfoStrings) {
       super();
-      for (int node = 0 ; node < nodeInfoStrings.length ; ++node) {
-        gatherNodeNumericInfo(nodeInfoStrings[node]);
+      for (String nodeInfoString : nodeInfoStrings) {
+        gatherNodeNumericInfo(nodeInfoString);
       }
     }
 
@@ -159,7 +159,7 @@ public class InfoParser {
         } else {
           sb.append("\n");
         }
-        sb.append(key + " " + get(key));
+        sb.append(key).append(" ").append(get(key));
       }
       return sb.toString();
     }
@@ -187,14 +187,14 @@ public class InfoParser {
       }
     }
 
-    public static NumericInfo average(NumericInfo... results) {
+    public static NumericInfo average(NumericInfo... infos) {
       NumericInfo result = new NumericInfo();
-      for (String key : results[0].keySet()) {
+      for (String key : infos[0].keySet()) {
         double average = 0;
-        for (int i = 0 ; i < results.length ; ++i) {
-          average += results[i].get(key);
+        for (NumericInfo info : infos) {
+          average += info.get(key);
         }
-        average /= results.length;
+        average /= infos.length;
         result.put(key, average);
       }
       return result;

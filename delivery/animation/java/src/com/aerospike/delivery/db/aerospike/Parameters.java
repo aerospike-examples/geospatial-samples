@@ -18,21 +18,19 @@
 package com.aerospike.delivery.db.aerospike;
 
 
-import com.aerospike.client.policy.Policy;
-import com.aerospike.client.policy.WritePolicy;
 import org.apache.commons.cli.CommandLine;
 
 /**
  * Configuration data.
  */
 public class Parameters {
-  public final String host;
+  final String host;
   public final int port;
-  public final String user;
-  public final String password;
+  final String user;
+  final String password;
   public final String namespace;
 
-  protected Parameters(String host, int port, String user, String password, String namespace) {
+  private Parameters(String host, int port, String user, String password, String namespace) {
     this.host = host;
     this.port = port;
     this.user = user;

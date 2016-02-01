@@ -30,11 +30,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
 
 
-public class InMemoryDrones extends Drones {
+class InMemoryDrones extends Drones {
 
   private final Map<Integer, Drone> contents;
 
-  public InMemoryDrones() {
+  InMemoryDrones() {
     contents = Collections.synchronizedMap(new HashMap<>());
   }
 

@@ -27,8 +27,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class DebuggingCountDownLatch<T extends Comparable<? super T>> extends CountDownLatch {
 
-  private static final Runnable dummyRunnable = new Runnable() { @Override public void run() {} };
-  final boolean isDebugging;
+  private static final Runnable dummyRunnable = () -> {};
+  private final boolean isDebugging;
   private final Runnable callout;
   private final CountDownLatch readyForCountdowns;
   private final Lock lock;
@@ -118,7 +118,7 @@ public class DebuggingCountDownLatch<T extends Comparable<? super T>> extends Co
   }
 
 
-  long countSnapshot;
+  private long countSnapshot;
 
   /** Print the participantsSoFar then the participants remaining
    *
@@ -190,7 +190,7 @@ public class DebuggingCountDownLatch<T extends Comparable<? super T>> extends Co
     for (T t : asSortedList(remaining)) out.println("  " + t);
   }
 
-  public static
+  private static
   <T extends Comparable<? super T>> List<T> asSortedList(Collection<T> c) {
     List<T> list = new ArrayList<T>(c);
     java.util.Collections.sort(list);

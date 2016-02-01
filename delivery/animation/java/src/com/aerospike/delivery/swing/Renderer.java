@@ -82,13 +82,13 @@ public class Renderer {
 
   private boolean doingStatsUpdate;
 
-  class DrawingTask implements Runnable {
+  private class DrawingTask implements Runnable {
 
     private Runnable imageCopier = new ImageCopier();
     long drawingStartTime;
     private long lastStatsUpdateTime;
 
-    public DrawingTask() {
+    DrawingTask() {
       super();
     }
 
@@ -162,7 +162,7 @@ public class Renderer {
     }
   }
 
-  static boolean delayNs(long durationNs) {
+  private static boolean delayNs(long durationNs) {
     long ms = durationNs / 1000000;
     try {
       Thread.sleep(ms, (int) (durationNs % 1000000));
@@ -173,12 +173,12 @@ public class Renderer {
   }
 
 
-  public interface JComponentWithBufferedImage {
+  interface JComponentWithBufferedImage {
     BufferedImage getBufferedImage();
     void repaint();
   }
 
-  class ImageCopier implements Runnable {
+  private class ImageCopier implements Runnable {
 
     @Override
     public void run() {
@@ -202,7 +202,7 @@ public class Renderer {
     }
   }
 
-  class DefaultColors {
+  private class DefaultColors {
     Color background = new Color(0, 0, 0);
     Color circleFill = new Color(93, 93, 93, 128);
     Color circleLine = new Color(133, 133, 133);
@@ -252,30 +252,15 @@ public class Renderer {
     // layered from back to front
     // Longitude increases leftwards. Latitude increases upwards.
     g2.translate(-Database.mapWidthPx / 2, -Database.mapHeightPx / 2);
-    drawRegions(g2);
     drawCirclesAndPath(g2);
     drawJobs  (g2, jobsToDraw);
     drawDrones(g2, dronesToDraw);
   }
 
 
-  private void drawFractionShown(Graphics2D g2) {
-    g2.setFont(new Font(null, Font.PLAIN, 10));
-    g2.setColor(new Color(174, 227, 189));
-    g2.drawString(String.format("Drawing xx"), 3 * width / 2 - 70, 3 * width / 2 - 5);
-    int radius = 100;
-    int diameter = radius * 2;
-  }
-
-  private void drawRegions(Graphics2D g) {
-//    g.setColor(Color.lightGray);
-//    g.drawLine(0, 0, 0, 0);
-  }
-
-
   //==================================================================================================================
 
-  public void drawCirclesAndPath(Graphics2D g) {
+  private void drawCirclesAndPath(Graphics2D g) {
     if (!Conductor.isDrawingCirclesAndLines) {
       return;
     }
@@ -359,7 +344,7 @@ public class Renderer {
 
   //==================================================================================================================
 
-  public void drawJobs(Graphics2D g, BlockingQueue<Job> jobsToDraw) throws InterruptedException {
+  private void drawJobs(Graphics2D g, BlockingQueue<Job> jobsToDraw) throws InterruptedException {
 //    System.out.println("drawJobs");
     while (true) {
       Job job;
@@ -370,7 +355,7 @@ public class Renderer {
         while (true) {
           job = jobsToDraw.poll(3, TimeUnit.SECONDS);
           if (job != null) break;
-          continue;
+          continue; // breakpoint
         }
       }
 //      System.out.println("--> job " + job.id);
@@ -436,7 +421,7 @@ public class Renderer {
     g.drawLine(xStart, yStart, xBegin, yBegin);
   }
 
-  JobStats jobStats = new JobStats();
+  private JobStats jobStats = new JobStats();
 
   public static class JobStats {
     public int waiting;
@@ -467,7 +452,7 @@ public class Renderer {
   //==================================================================================================================
 
 
-  public void drawDrones(Graphics2D g, BlockingQueue<Drone> dronesToDraw) throws InterruptedException {
+  private void drawDrones(Graphics2D g, BlockingQueue<Drone> dronesToDraw) throws InterruptedException {
     while (true) {
       Drone drone;
       if (false) {
@@ -477,7 +462,7 @@ public class Renderer {
         while (true) {
           drone = dronesToDraw.poll(3, TimeUnit.SECONDS);
           if (drone != null) break;
-          continue;
+          continue; // breakpoint
         }
       }
       if (drone == Drone.NullDrone) {
@@ -497,11 +482,11 @@ public class Renderer {
           case ArrivedAtJob:
           case Delivering:
           case Delivered:
-            drawDrone(g, drone, drone.getLocation(), colors.defaultDrone, false);
+            drawDrone(g, drone, drone.getLocation(), colors.defaultDrone);
             break;
           case Done:
           case OffDuty:
-            drawDrone(g, drone, drone.getLocation(), colors.readyDrone, false);
+            drawDrone(g, drone, drone.getLocation(), colors.readyDrone);
             break;
         }
       } else {
@@ -511,7 +496,7 @@ public class Renderer {
           case Init:
           case Done:
           case Ready:
-            drawDrone(g, drone, drone.getLocation(), colors.readyDrone, false);
+            drawDrone(g, drone, drone.getLocation(), colors.readyDrone);
             break;
           case GotAJob:
           case Departing:
@@ -521,14 +506,14 @@ public class Renderer {
           case Delivered:
             break;
           case OffDuty:
-            drawDrone(g, drone, drone.getLocation(), colors.offDutyDrone, false);
+            drawDrone(g, drone, drone.getLocation(), colors.offDutyDrone);
             break;
         }
       }
     }
   }
 
-  private synchronized void drawDrone(Graphics2D g, Drone drone, Location location, Color color, boolean isMoving) {
+  private synchronized void drawDrone(Graphics2D g, Drone drone, Location location, Color color) {
     final int r = 4;
     int x = transformX(location.x);
     int y = transformY(location.y);
@@ -549,11 +534,11 @@ public class Renderer {
     return (int) (distance * Math.min(Database.mapHeightPx, Database.mapWidthPx));
   }
 
-  int transformX(double positiveIsToTheRight) {
+  private int transformX(double positiveIsToTheRight) {
     return width / 2 + (int) -(positiveIsToTheRight * Database.mapWidthPx);
   }
 
-  int transformY(double positiveIsUp) {
+  private int transformY(double positiveIsUp) {
     return height / 2 + (int) -(positiveIsUp * Database.mapHeightPx);
   }
 
@@ -566,7 +551,7 @@ public class Renderer {
     public int offDuty;
   }
 
-  DroneStats droneStats = new DroneStats();
+  private DroneStats droneStats = new DroneStats();
 
   private void updateDroneStats(Drone drone) {
     if (doingStatsUpdate) {

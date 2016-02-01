@@ -43,27 +43,25 @@ import java.util.function.Predicate;
 // aql -c create index geo on demo1.jobs (Waiting) GEO2DSPHERE
 
 
-public class AerospikeJobs extends Jobs {
+class AerospikeJobs extends Jobs {
 
   private final AerospikeDatabase database;
-  final String setName;
-  private ConcurrentHashMap<Key, Job> renderCache;
+  private final String setName;
   private final Set<Job> jobsOnHoldCache;
 
   // One of these is attached to every job.
-  class Metadata extends Jobs.Metadata {
+  private class Metadata extends Jobs.Metadata {
     int generation = 0;
     Job.State previousState = Job.State.Init;
   }
 
   //-----------------------------------------------------------------------------------
 
-  public AerospikeJobs(AerospikeDatabase database) {
+  AerospikeJobs(AerospikeDatabase database) {
     this.database = database;
     setName = "jobs";
-    renderCache = new ConcurrentHashMap<>();
     jobsOnHoldCache = ConcurrentHashMap.newKeySet();
-//    createIndex();
+    createIndex();
   }
 
   //-----------------------------------------------------------------------------------
@@ -112,7 +110,6 @@ public class AerospikeJobs extends Jobs {
   public void clear() {
     super.clear();
     database.clearSet("jobs");
-    renderCache.clear();
   }
 
   //-----------------------------------------------------------------------------------
@@ -149,8 +146,7 @@ public class AerospikeJobs extends Jobs {
 
     QueryPolicy policy = new QueryPolicy();
     ++Metering.jobQueryWithinRadius;
-    RecordSet rs = database.client.query(policy, stmt);
-    try {
+    try (RecordSet rs = database.client.query(policy, stmt)) {
       while (rs.next()) {
         ++Metering.jobRadiusResults;
         Job job = get(rs.getKey(), rs.getRecord());
@@ -158,8 +154,6 @@ public class AerospikeJobs extends Jobs {
           break;
         }
       }
-    } finally {
-      rs.close();
     }
   }
 
@@ -226,7 +220,7 @@ public class AerospikeJobs extends Jobs {
   }
 
 
-  class ForeachScanCallback implements ScanCallback {
+  private class ForeachScanCallback implements ScanCallback {
     private final Predicate<? super Job> action;
 
     ForeachScanCallback(Predicate<? super Job> action) {
@@ -273,7 +267,7 @@ public class AerospikeJobs extends Jobs {
 
         private final BlockingQueue<Job> queue;
 
-        public RefreshRenderCacheScanCallback(BlockingQueue<Job> queue) {
+        RefreshRenderCacheScanCallback(BlockingQueue<Job> queue) {
           this.queue = queue;
         }
 
@@ -283,18 +277,6 @@ public class AerospikeJobs extends Jobs {
           Job job = get(key, record);
           queue.add(job);
         }
-
-      }
-    });
-    return result;
-  }
-
-
-  public BlockingQueue<Job> makeQueueForRenderingWithGet() {
-    final BlockingQueue<Job> result = new LinkedBlockingQueue<>();
-    OurExecutor.instance.execute(new Runnable() {
-      @Override
-      public void run() {
 
       }
     });

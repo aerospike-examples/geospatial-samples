@@ -58,16 +58,12 @@ public abstract class Database {
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   public static Database makeAerospikeDatabase(CommandLine commandLine) {
-    AerospikeDatabase database = makeAerospikeDatabase();
+    AerospikeDatabase database = new AerospikeDatabase();
     if (database.parseOptions(commandLine)) {
       return database;
     } else {
       return null;
     }
-  }
-
-  public static AerospikeDatabase makeAerospikeDatabase() {
-    return new AerospikeDatabase();
   }
 
 

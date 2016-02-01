@@ -36,12 +36,10 @@ public class Job extends Movable implements Comparable<Job> {
   public static int NullID = 0;
   public static int FirstID = 1;
   public final int id;
-  public Location origin;
-  public Location destination;
+  Location origin;
+  Location destination;
   public Location previousLocation;
   public State state;
-  Instant timePutOnHold;
-  private Drone drone;
   public int droneid;
   public final ReentrantReadWriteLock lock; // todo Renderer should readLock
   private boolean isCandidate; // found by the circle query
@@ -81,7 +79,7 @@ public class Job extends Movable implements Comparable<Job> {
     lock = new ReentrantReadWriteLock(true);
   }
 
-  public Job() {
+  private Job() {
     jobs = null;
     id = NullID;
     lock = null;
@@ -111,16 +109,16 @@ public class Job extends Movable implements Comparable<Job> {
     return origin;
   }
 
-  public void setOrigin(Location origin) {
+  private void setOrigin(Location origin) {
     Database.assertWriteLocked(lock);
     this.origin = origin;
   }
 
-  public void setTimePickedUp(Instant newValue) {
+  void setTimePickedUp(Instant newValue) {
     this.timePickedUp = newValue;
   }
 
-  public void setTimeDelivered(Instant newValue) {
+  void setTimeDelivered(Instant newValue) {
     this.timeDelivered = newValue;
   }
 
@@ -142,7 +140,7 @@ public class Job extends Movable implements Comparable<Job> {
     return destination;
   }
 
-  public void setDestination(Location newValue) {
+  private void setDestination(Location newValue) {
     Database.assertWriteLocked(lock);
     destination = newValue;
   }
@@ -172,7 +170,7 @@ public class Job extends Movable implements Comparable<Job> {
     return isCandidate;
   }
 
-  public void setCandidateAndPut(boolean newValue) {
+  void setCandidateAndPut(boolean newValue) {
     Database.assertWriteLocked(lock);
     if (isCandidate != newValue) {
       isCandidate = newValue;
@@ -206,10 +204,10 @@ public class Job extends Movable implements Comparable<Job> {
     return id;
   }
 
-  public static class DistanceComparator implements Comparator<Job> {
+  static class DistanceComparator implements Comparator<Job> {
     private final Location location;
 
-    public DistanceComparator(Location location) {
+    DistanceComparator(Location location) {
       super();
       this.location = location;
     }

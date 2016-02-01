@@ -18,10 +18,10 @@
 package com.aerospike.delivery;
 
 
-public abstract class Movable {
+abstract class Movable {
   private Location location;
 
-  public Movable() {
+  Movable() {
     location = Location.makeRandom();
   }
 

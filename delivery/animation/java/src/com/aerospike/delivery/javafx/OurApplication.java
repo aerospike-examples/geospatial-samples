@@ -41,7 +41,6 @@ public class OurApplication extends Application {
   public void start(Stage primaryStage) throws Exception {
     URL resource = getClass().getResource("/MainWindow.fxml");
     Parent root = FXMLLoader.load(resource);
-    javafx.stage.Window owner = primaryStage.getOwner();
     primaryStage.setTitle(name);
     primaryStage.setX(0);
     primaryStage.setY(0);
@@ -58,7 +57,7 @@ public class OurApplication extends Application {
     SwingUtilities.invokeLater(() -> {
       swingNode.setContent(MapPanel.instance);
       MapPanel.instance.renderer.start();
-      Platform.runLater((Runnable) () -> {
+      Platform.runLater(() -> {
         primaryStage.sizeToScene();
         primaryStage.setResizable(false);
         primaryStage.show();

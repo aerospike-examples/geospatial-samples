@@ -23,6 +23,7 @@ import com.aerospike.delivery.util.OurRandom;
 import com.google.gson.Gson;
 
 import java.awt.Point;
+import java.lang.reflect.Type;
 
 public class Location extends Point.Double {
 
@@ -52,13 +53,13 @@ public class Location extends Point.Double {
   public static Location makeFromGeoJSONPointDouble(String geoJSON) {
     Location result = null;
     if (geoJSON != null) {
-      GeoJSONPointDouble geo = new Gson().fromJson(geoJSON, GeoJSONPointDouble.class);
+      GeoJSONPointDouble geo = new Gson().fromJson(geoJSON, (Type) GeoJSONPointDouble.class);
       result = new Location(geo.coordinates[0], geo.coordinates[1]);
     }
     return result;
   }
 
-  public static Location makeRandom() {
+  static Location makeRandom() {
     // BooleanRunner and y range from -0.500 to 0.500 in steps corresponding to one pixel
     double random01x;
     double random01y;
@@ -70,7 +71,7 @@ public class Location extends Point.Double {
       random01x = OurRandom.instance.nextInt(Database.mapWidthPx) / (double) Database.mapWidthPx;
       random01y = OurRandom.instance.nextInt(Database.mapHeightPx) / (double) Database.mapHeightPx;
     }
-    Location result = new Location(random01x - .5, random01y - .5);
+    Location result = new Location(random01x - maxOffset, random01y - maxOffset);
 //    System.out.printf("%s %f\n", result, random01x);
     return result;
   }
@@ -121,7 +122,7 @@ public class Location extends Point.Double {
    * @param destination
    * @return location partway to the destination
    */
-  public Location partWay(double partway, Location destination) {
+  Location partWay(double partway, Location destination) {
     final double wholeway = distanceTo(destination);
     if (wholeway == 0) {
       return this;
