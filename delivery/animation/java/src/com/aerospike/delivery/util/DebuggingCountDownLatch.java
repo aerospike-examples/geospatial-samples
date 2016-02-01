@@ -7,9 +7,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Created by yost on 2016-01-05.
- */
+
 public class DebuggingCountDownLatch<T extends Comparable<? super T>> extends CountDownLatch {
 
   private static final Runnable dummyRunnable = new Runnable() { @Override public void run() {} };

@@ -16,12 +16,12 @@ public class OurOptions {
 
   public static final OurOptions instance = new OurOptions();
 
-  static long animationIntervalMs = 1000 / Renderer.maxFramesPerSecond;
+  long animationIntervalMs = 1000 / Renderer.maxFramesPerSecond;
 
   public String appName;
   int nbSwarmDrones = 70;
   int nbTrips = 5;
-  static double startingRadius = .005;
+  double startingRadius = .005;
   double animationSpeed = 1.0;
   public boolean isDrawingJobNumbers = false;
   int seedForRepeatableRandomBehavior = 6;

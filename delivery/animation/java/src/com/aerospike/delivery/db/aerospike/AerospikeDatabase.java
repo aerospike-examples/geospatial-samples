@@ -158,7 +158,6 @@ public class AerospikeDatabase extends Database {
   public static void main(String[] args) {
     OurOptions options = new OurOptions();
     options.doCommandLineOptions("ae-test", args);
-    boolean useCaching = false;
     AerospikeDatabase database = Database.makeAerospikeDatabase();
     AerospikeJobs jobs = (AerospikeJobs) database.getJobs();
     if (database.connect()) {

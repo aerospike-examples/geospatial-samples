@@ -2,7 +2,6 @@ package com.aerospike.delivery;
 
 import com.aerospike.delivery.db.base.Database;
 import com.aerospike.delivery.db.base.Jobs;
-import com.aerospike.delivery.util.DebuggingCountDownLatch;
 import com.aerospike.delivery.util.OurExecutor;
 
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ public class Conductor implements Runnable {
   static volatile boolean isLeadDroneStillRunning;
   static int slowdownFactorDefault = 100;
   static int maxTripsPerDrone;
-  static DebuggingCountDownLatch activeDrones;
+  static CountDownLatch activeDrones;
   static int slowdownFactor() { return slowdownFactor; }
 
   // Jobs accesses this
@@ -108,7 +107,7 @@ public class Conductor implements Runnable {
       drones.add(drone);
       return true;
     });
-    activeDrones = new DebuggingCountDownLatch(false, drones);
+    activeDrones = new CountDownLatch(drones.size());
   }
 
   private void addDrones(int nbDronesRequired, int nbExamples, long durationNs) throws InterruptedException {

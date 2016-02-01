@@ -1,5 +1,6 @@
 package com.aerospike.delivery.db.aerospike;
 
+import com.aerospike.delivery.OurOptions;
 import com.aerospike.delivery.util.OurExecutor;
 
 import java.util.concurrent.Future;
@@ -23,6 +24,7 @@ public class Metering implements Runnable {
   final int nbSeconds = 3;
   public volatile long renders;
   private volatile Future future;
+  private volatile boolean isStopping;
 
 
   public static void start() {
@@ -30,6 +32,7 @@ public class Metering implements Runnable {
   }
 
   public synchronized void stop() {
+    isStopping = true;
     if (future != null) {
       future.cancel(true);
       future = null;
@@ -38,9 +41,14 @@ public class Metering implements Runnable {
 
   @Override
   public synchronized void run() {
+    if (isStopping) {
+      isStopping = false;
+      return;
+    }
     future = null;
     printJobStats();
     printDroneStats();
+    System.out.println(InfoParser.getClusterLatencyInfo(((AerospikeDatabase)OurOptions.instance.database).client));
     future = OurExecutor.instance.schedule(this, nbSeconds * 1000, TimeUnit.MILLISECONDS);
   }
 
@@ -75,4 +83,5 @@ public class Metering implements Runnable {
     droneScans = 0;
     droneScanResults = 0;
   }
+
 }

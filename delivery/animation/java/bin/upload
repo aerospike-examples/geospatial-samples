@@ -1,8 +1,8 @@
 #!/bin/bash
 
 function rsyncec2 {
-  echo "[ rsync --rsh=\"ssh -l ec2-user -i /Users/yost/.ssh/geo-demo.pem\" $@ ]"
-          rsync  --rsh="ssh -l ec2-user -i /Users/yost/.ssh/geo-demo.pem" $@
+  echo "[ rsync --rsh=\"ssh -l ec2-user -i ~/.ssh/geo-demo.pem\" $@ ]"
+          rsync  --rsh="ssh -l ec2-user -i ~/.ssh/geo-demo.pem" $@
 }
 
 mvn package \

@@ -280,7 +280,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
           // OffDuty exit
             isActive = false;
             currentRadius = 0;
-            Conductor.activeDrones.countDown(this);
+            Conductor.activeDrones.countDown();
             setState(OffDuty);
             return;
 
@@ -355,11 +355,11 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
       }
       double currentSpeed = (isExample ? 1 : .5) * speed() * speedStep / nbSpeedSteps;
 //      System.out.printf("%d %f %f\n", speedStep, distance, currentSpeed);
-      double distancePerAnimationInterval = OurOptions.animationIntervalMs * currentSpeed;
+      double distancePerAnimationInterval = OurOptions.instance.animationIntervalMs * currentSpeed;
       double thisSegment = Math.min(distanceToTarget, distancePerAnimationInterval);
       waypoint = getLocation().partWay(thisSegment, whereTo); // for next time
       double intervalPortion = thisSegment / distancePerAnimationInterval;
-      future = OurExecutor.instance.schedule(this, (long) (OurOptions.animationIntervalMs * intervalPortion), timeUnit);
+      future = OurExecutor.instance.schedule(this, (long) (OurOptions.instance.animationIntervalMs * intervalPortion), timeUnit);
 //      System.out.format("%s %s %1.3f   %1.3f   %1.3f   %s\n", waypoint, getLocation(), distance, thisSegment, intervalPortion, waypoint);
       result = true;
     }
@@ -393,7 +393,7 @@ public class Drone extends Movable implements Runnable, Comparable<Drone> {
   private Job findNearbyJob() {
 //    resetCandidates(); // should not be necessary
     if (!isSearchContinuing) {
-      currentRadius = OurOptions.startingRadius;
+      currentRadius = OurOptions.instance.startingRadius;
       nbSearchTries = 0;
     } else {
       //currentInnerRadius = currentRadius; // not doing donut search
