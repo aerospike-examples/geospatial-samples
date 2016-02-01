@@ -1,6 +1,5 @@
-package com.aerospike.delivery.db.aerospike;
 /*
- * Copyright 2012-2015 Aerospike, Inc.
+ * Copyright 2016 Aerospike, Inc.
  *
  * Portions may be licensed to Aerospike, Inc. under one or more contributor
  * license agreements WHICH ARE COMPATIBLE WITH THE APACHE LICENSE, VERSION 2.0.
@@ -15,6 +14,8 @@ package com.aerospike.delivery.db.aerospike;
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
+package com.aerospike.delivery.db.aerospike;
 
 
 import com.aerospike.client.policy.Policy;
