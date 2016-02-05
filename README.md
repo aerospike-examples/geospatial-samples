@@ -5,4 +5,4 @@ Aerospike Geospatial Index Sample Applications
 
 -   [OpenStreetMap Dataset](<osm>)
 
--   [​Delivery demo](<delivery>)
+-   [​Delivery demo](<delivery/animation/java>)

@@ -6,4 +6,4 @@ function rsyncec2 {
 }
 
 mvn package \
-&& rsyncec2 -av target/delivery-1.0.0-jar-with-dependencies.jar aerospike-app-server:
+&& rsyncec2 -avR bin target/delivery-1.0.0-jar-with-dependencies.jar aerospike-app-server:
