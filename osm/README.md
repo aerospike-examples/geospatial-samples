@@ -65,7 +65,7 @@ Querying OpenStreetMap Data
 
 Once the OpenStreetMap data has been loaded into an Aerospike cluster
 geospatial queries may be made on the data.  The following sample
-programs all return any items in the dataase which are inside a circle
+programs all return any items in the database which are inside a circle
 around a chosen point:
 
 #### Sample Query Programs
