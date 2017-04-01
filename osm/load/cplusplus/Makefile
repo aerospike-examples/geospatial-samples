@@ -32,6 +32,7 @@ ASLIBS +=		\
 			-laerospike \
 			-ldl \
 			-lcrypto \
+			-lssl \
 			-lpthread \
 			$(NULL)
 

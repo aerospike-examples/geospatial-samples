@@ -32,6 +32,7 @@ ASLIBS +=		\
 			-llua \
 			-ldl \
 			-lcrypto \
+			-lssl \
 			$(NULL)
 
 ifeq ($(OS),Darwin)

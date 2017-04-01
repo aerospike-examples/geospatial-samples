@@ -8,7 +8,7 @@ Install the Aerospike C Client from the download page:
 
 On RedHat/CentOS:
 
-    sudo yum install -u jansson-devel openssl lua-libs
+    sudo yum install jansson-devel openssl lua-devel
 
 On Debian/Ubuntu:
 
