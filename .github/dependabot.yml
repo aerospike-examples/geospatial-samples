@@ -1,0 +1,121 @@
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /geoproxy
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /osm/around/cplusplus
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /osm/around/java
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /osm/around/nodejs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /osm/around/nodejs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /osm/around/python
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /osm/around/python
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /osm/load/cplusplus
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /osm/load/python
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /osm/load/python
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /yelp/around/cplusplus
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /yelp/around/java
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /yelp/around/nodejs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /yelp/around/nodejs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /yelp/around/python
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /yelp/load/cplusplus
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /yelp/load/java
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /yelp/load/nodejs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /yelp/load/nodejs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /yelp/load/python
+    schedule:
+      interval: daily
+
+  - package-ecosystem: maven
+    directory: /delivery/animation/java
+    schedule:
+      interval: daily
+
+  - package-ecosystem: maven
+    directory: /osm/around/java
+    schedule:
+      interval: daily
+
+  - package-ecosystem: maven
+    directory: /yelp/around/java
+    schedule:
+      interval: daily
+
+  - package-ecosystem: maven
+    directory: /yelp/load/java
+    schedule:
+      interval: daily

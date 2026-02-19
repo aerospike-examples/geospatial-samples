@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:14.04@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30
 RUN apt-get update
 RUN apt-get -y install libssl-dev curl build-essential libjansson-dev
 RUN curl -sSL http://www.aerospike.com/download/client/c/3.1.24/artifact/ubuntu12 > aerospike-client-c.tgz
